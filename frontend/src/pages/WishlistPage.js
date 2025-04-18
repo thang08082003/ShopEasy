@@ -171,7 +171,7 @@ const WishlistPage = () => {
                     variant="contained"
                     disabled={product.stock <= 0}
                   >
-                    {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                    { 'Add to Cart' }
                   </Button>
                   <IconButton 
                     color="error" 

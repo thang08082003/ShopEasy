@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/axiosConfig';
 import productAPI from '../api/productAPI';  // Import productAPI
 
 // MUI components
@@ -52,10 +51,11 @@ const ProductReviews = ({ productId }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userReview, setUserReview] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [reviewNotification, setReviewNotification] = useState(null);
   
   const { isAuthenticated, user } = useSelector(state => state.auth);
   
-  // Fetch reviews - Modified to better handle API data
+  // Fetch reviews using productAPI
   useEffect(() => {
     const fetchReviews = async () => {
       if (!productId) {
@@ -65,51 +65,14 @@ const ProductReviews = ({ productId }) => {
       
       try {
         setLoading(true);
-        console.log(`Fetching reviews for product: ${productId}`);
+        const response = await productAPI.getProductReviews(productId);
         
-        // Try multiple potential endpoints to find the correct one
-        let response;
-        try {
-          // First try the most common pattern - reviews as sub-resource of products
-          response = await api.get(`/api/products/${productId}/reviews`);
-          console.log('Successfully retrieved reviews from /api/products endpoint');
-        } catch (e) {
-          console.log('First endpoint failed, trying alternative');
-          try {
-            // Second try - reviews as main resource with query param
-            response = await api.get(`/api/reviews?productId=${productId}`);
-            console.log('Successfully retrieved reviews from query param endpoint');
-          } catch (e2) {
-            // Third try - another common pattern
-            console.log('Second endpoint failed, trying final alternative');
-            response = await api.get(`/api/reviews/byProduct/${productId}`);
-            console.log('Successfully retrieved reviews from byProduct endpoint');
-          }
-        }
-        
-        console.log('Raw API response:', response);
-        
-        // Handle various response formats to ensure we extract reviews
-        let reviewsData;
-        if (response.data && Array.isArray(response.data)) {
-          reviewsData = response.data;
-        } else if (response.data && Array.isArray(response.data.data)) {
-          reviewsData = response.data.data;
-        } else if (response.data && response.data.reviews) {
-          reviewsData = response.data.reviews;
-        } else {
-          console.log('Could not find reviews in response, using fallback data');
-          reviewsData = [];
-        }
-        
-        console.log('Final reviews data being used:', reviewsData);
-        setReviews(reviewsData);
-        setTotalPages(Math.ceil((reviewsData.length || 0) / 5));
+        setReviews(response.reviews || []);
+        setTotalPages(Math.ceil((response.reviews?.length || 0) / 5));
         setError(null);
       } catch (err) {
-        console.error('Error fetching reviews:', err);
-        console.error('Error details:', err.response || err.message);
-        setError(`Failed to load reviews: ${err.response?.status || err.message}`);
+        console.error('Error fetching reviews:', err.message);
+        setError(`Failed to load reviews: ${err.message}`);
         setReviews([]);
       } finally {
         setLoading(false);
@@ -119,99 +82,18 @@ const ProductReviews = ({ productId }) => {
     fetchReviews();
   }, [productId, page]);
   
-  // Check if the user has already reviewed this product - Enhanced with more endpoints
+  // Check if the user has already reviewed this product
   useEffect(() => {
     const checkUserReview = async () => {
       if (!isAuthenticated || !productId) {
-        console.log('User not authenticated or no productId, skipping user review check');
         return;
       }
       
       try {
-        console.log(`Checking if user has reviewed product: ${productId}`);
-        
-        // Try multiple potential endpoints with expanded options
-        const endpointsToTry = [
-          `/api/products/${productId}/reviews/me`,
-          `/api/reviews/me?productId=${productId}`,
-          `/api/reviews/user/product/${productId}`,
-          `/api/products/${productId}/reviews/user`,
-          `/api/reviews/user?productId=${productId}`,
-          `/api/reviews/my-review/${productId}`,
-          `/api/user-reviews?productId=${productId}`,
-          `/api/user/reviews/${productId}`,
-          `/api/reviews?userId=me&productId=${productId}`, 
-          `/api/reviews/product/${productId}/user`,
-          `/api/products/${productId}/ratings/me`
-        ];
-        
-        let response = null;
-        let success = false;
-        
-        for (const endpoint of endpointsToTry) {
-          try {
-            console.log(`Trying endpoint: ${endpoint}`);
-            response = await api.get(endpoint);
-            success = true;
-            console.log(`Found user review at endpoint: ${endpoint}`);
-            break;
-          } catch (err) {
-            console.log(`Endpoint ${endpoint} failed:`, err.response?.status || err.message);
-          }
-        }
-        
-        if (!success) {
-          // If all endpoints failed, we need to check the reviews list
-          // This is a fallback approach to search for the user's review in the full reviews list
-          try {
-            console.log('Trying to find user review in general reviews list');
-            const allReviewsResponse = await api.get(`/api/products/${productId}/reviews`);
-            const allReviews = allReviewsResponse.data?.data || allReviewsResponse.data || [];
-            
-            if (Array.isArray(allReviews) && user?._id) {
-              const foundReview = allReviews.find(review => 
-                review.user?._id === user._id || review.userId === user._id
-              );
-              
-              if (foundReview) {
-                console.log('Found user review in general reviews list:', foundReview);
-                response = { data: { data: foundReview } };
-                success = true;
-              }
-            }
-          } catch (err) {
-            console.log('Failed to check general reviews list:', err.message);
-          }
-        }
-        
-        // Process the response if we found a review
-        if (success && response) {
-          console.log('User review check response:', response.data);
-          
-          // Try to extract the user review data
-          let reviewData = null;
-          
-          if (response.data && response.data.data) {
-            reviewData = response.data.data;
-          } else if (response.data && response.data.review) {
-            reviewData = response.data.review;
-          } else if (response.data && !Array.isArray(response.data)) {
-            reviewData = response.data;
-          }
-          
-          if (reviewData) {
-            console.log('User review found:', reviewData);
-            setUserReview(reviewData);
-          } else {
-            console.log('Response didn\'t contain user review data in expected format');
-            setUserReview(null);
-          }
-        } else {
-          console.log('No existing user review found after trying all endpoints');
-          setUserReview(null);
-        }
+        const userReviewData = await productAPI.getUserReview(productId);
+        setUserReview(userReviewData);
       } catch (err) {
-        console.log('Error checking user review:', err.response || err);
+        console.log('No existing user review found');
         setUserReview(null);
       }
     };
@@ -219,7 +101,7 @@ const ProductReviews = ({ productId }) => {
     checkUserReview();
   }, [productId, isAuthenticated, user]);
   
-  // Form handling - update the onSubmit function to use productAPI
+  // Form handling with optimized submission
   const formik = useFormik({
     initialValues: {
       rating: userReview?.rating || 0,
@@ -240,187 +122,53 @@ const ProductReviews = ({ productId }) => {
       
       setSubmitLoading(true);
       try {
-        console.log('Submitting review with values:', { ...values, productId });
-        
-        // Format review data in multiple ways to try different API expectations
-        const directFormat = {
+        const reviewData = {
           rating: values.rating,
           comment: values.comment,
-          productId: productId
+          productId
         };
         
-        // Even simpler formats with variations on field names that might match backend
-        const simpleFormats = [
-          { rating: values.rating, comment: values.comment }, // Standard
-          { rating: values.rating, review: values.comment }, // Review field
-          { rating: values.rating, text: values.comment }, // Text field
-          { score: values.rating, comment: values.comment }, // Score field
-          { stars: values.rating, comment: values.comment }, // Stars field
-          { rating: values.rating, content: values.comment } // Content field
-        ];
-        
-        let success = false;
-        let userReviewData = null;
-        let lastResponseData = null;
-        let lastError = null;
-
-        // Debug request with console output for investigation
-        console.log('REQUEST DEBUG - Authorization header present:', 
-          !!api.defaults.headers.common['Authorization']);
-        
-        // Try multiple endpoints with multiple data formats
-        // Best approach is to try more combinations since we don't know the API structure
-        const baseEndpoints = userReview ? [
-          // Update endpoints - try both PUT and PATCH
-          `/api/products/${productId}/reviews/${userReview._id}`,
-          `/api/reviews/${userReview._id}`,
-          `/api/product/${productId}/reviews/${userReview._id}`,
-          `/api/product-reviews/${userReview._id}`,
-          `/api/ratings/${userReview._id}`,
-          `/api/reviews/update/${userReview._id}`,
-          `/api/product-ratings/${userReview._id}`,
-          `/api/review/${userReview._id}`
-        ] : [
-          // Create endpoints
-          `/api/products/${productId}/reviews`,
-          `/api/reviews`,
-          `/api/product/${productId}/reviews`,
-          `/api/product-reviews`,
-          `/api/ratings`,
-          `/api/reviews/create`,
-          `/api/product-ratings`,
-          `/api/review`
-        ];
-        
-        // Try all endpoint and data format combinations
-        for (const endpoint of baseEndpoints) {
-          for (const format of simpleFormats) {
-            try {
-              // Try with simple format
-              const method = userReview ? 'put' : 'post';
-              console.log(`Trying ${method.toUpperCase()} to ${endpoint} with data:`, format);
-              
-              const response = await api({
-                method,
-                url: endpoint,
-                data: format
-              });
-              
-              console.log('SUCCESS! Response:', response.data);
-              success = true;
-              lastResponseData = response.data;
-              
-              // Extract user review data from response for updating UI
-              if (response.data && response.data.data) {
-                userReviewData = response.data.data;
-              } else if (response.data) {
-                userReviewData = response.data;
-              }
-              
-              break; // Exit the loop once we have a successful request
-            } catch (err) {
-              console.log(`Failed ${userReview ? 'PUT' : 'POST'} to ${endpoint}:`, 
-                err.response ? `Status: ${err.response.status}, Message: ${err.response.data?.message || 'No message'}` : err.message);
-              
-              lastError = err;
-              
-              // If it's PATCH, also try PUT
-              if (!userReview) continue;
-              
-              try {
-                console.log(`Trying PATCH to ${endpoint} with data:`, format);
-                const response = await api({
-                  method: 'patch',
-                  url: endpoint,
-                  data: format
-                });
-                
-                console.log('SUCCESS with PATCH! Response:', response.data);
-                success = true;
-                lastResponseData = response.data;
-                
-                if (response.data && response.data.data) {
-                  userReviewData = response.data.data;
-                } else if (response.data) {
-                  userReviewData = response.data;
-                }
-                
-                break;
-              } catch (patchErr) {
-                console.log(`Failed PATCH to ${endpoint}:`, 
-                  patchErr.response ? `Status: ${patchErr.response.status}, Message: ${patchErr.response.data?.message || 'No message'}` : patchErr.message);
-              }
-            }
-          }
-          
-          // If we succeeded with this endpoint, break out of the endpoint loop
-          if (success) break;
+        let result;
+        if (userReview && userReview._id) {
+          console.log('Updating existing review with ID:', userReview._id);
+          result = await productAPI.updateReview(productId, userReview._id, reviewData);
+        } else {
+          console.log('Creating new review');
+          result = await productAPI.createReview(productId, reviewData);
         }
         
-        // As a last resort - try without product ID
-        if (!success) {
-          try {
-            const directEndpoint = userReview ? 
-              `/api/reviews/${userReview._id}` : 
-              '/api/reviews';
-              
-            const response = await api({
-              method: userReview ? 'put' : 'post',
-              url: directEndpoint,
-              data: { rating: values.rating, comment: values.comment }
-            });
-            
-            console.log('LAST RESORT SUCCESS! Response:', response.data);
-            success = true;
-            userReviewData = response.data.data || response.data;
-          } catch (err) {
-            console.log('Last resort attempt failed:', err.response || err.message);
-          }
-        }
-        
-        if (!success) {
-          console.error('All API endpoint attempts failed. Last error:', lastError);
-          throw new Error('Could not save review. Please try again later or contact support.');
-        }
-        
-        // Update user review state if we have data
-        if (userReviewData) {
-          setUserReview(userReviewData);
-          console.log('Updated user review state with:', userReviewData);
-        } else if (lastResponseData) {
-          // If we don't have specific user review data but have a response, use it
-          console.log('No specific user review data found, using last response data');
-          setUserReview({
-            _id: lastResponseData._id || userReview?._id || 'temp-id',
-            rating: values.rating,
-            comment: values.comment,
-            user: user
-          });
-        }
-        
-        // Refresh reviews after submission
+        setUserReview(result);
         await refreshReviews();
         
         setDialogOpen(false);
         setPage(1);
-        
-        // Show success message
         setError(null);
       } catch (err) {
-        console.error('Error submitting review:', err);
-        console.error('Error details:', err.response?.data || err.message);
+        console.error('Review submission error:', err);
+        if (err.response?.status === 400 && err.response?.data?.message?.includes('already reviewed')) {
+          // If user already has a review, try to find it and update instead
+          try {
+            const existingReview = await productAPI.getUserReview(productId);
+            if (existingReview && existingReview._id) {
+              const reviewData = { rating: values.rating, comment: values.comment };
+              const result = await productAPI.updateReview(productId, existingReview._id, reviewData);
+              setUserReview(result);
+              await refreshReviews();
+              setDialogOpen(false);
+              return;
+            }
+          } catch (findErr) {
+            console.error('Failed to find existing review:', findErr);
+          }
+        }
         
-        // More detailed error messages based on response
-        if (err.response?.status === 400) {
-          const errorMsg = err.response?.data?.message || 'Invalid review data. Please check your rating and comment.';
-          setError(`Review submission failed: ${errorMsg}`);
-        } else if (err.response?.status === 401) {
+        if (err.statusCode === 401 || err.response?.status === 401) {
           setError('You must be logged in to submit a review.');
           setTimeout(() => {
             navigate('/login', { state: { redirect: `/products/${productId}` } });
           }, 2000);
         } else {
-          setError(`Failed to submit review: ${err.message || 'Unknown error'}`);
+          setError(`Failed to submit review: ${err.response?.data?.message || err.message || 'Unknown error'}`);
         }
       } finally {
         setSubmitLoading(false);
@@ -428,47 +176,14 @@ const ProductReviews = ({ productId }) => {
     }
   });
 
-  // Enhanced refreshReviews function with more robust error handling
+  // Simplified refreshReviews function
   const refreshReviews = async () => {
     try {
-      console.log('Refreshing reviews');
-      let refreshResponse;
-      let success = false;
-      
-      const endpointsToTry = [
-        `/api/products/${productId}/reviews`,
-        `/api/reviews?productId=${productId}`,
-        `/api/reviews/product/${productId}`,
-        `/api/reviews/byProduct/${productId}`,
-        `/api/product/${productId}/reviews`,
-        `/api/product-reviews?productId=${productId}`
-      ];
-      
-      for (const endpoint of endpointsToTry) {
-        try {
-          console.log(`Trying to fetch reviews from: ${endpoint}`);
-          refreshResponse = await api.get(endpoint);
-          success = true;
-          console.log('Successfully fetched reviews from:', endpoint);
-          break;
-        } catch (err) {
-          console.log(`Failed to fetch reviews from ${endpoint}:`, err.message);
-        }
-      }
-      
-      if (!success) {
-        console.error('Failed to refresh reviews from all endpoints');
-        return;
-      }
-      
-      if (refreshResponse.data && (refreshResponse.data.data || refreshResponse.data)) {
-        const reviewsData = refreshResponse.data.data || refreshResponse.data;
-        setReviews(Array.isArray(reviewsData) ? reviewsData : []);
-        setTotalPages(Math.ceil(((refreshResponse.data.total || reviewsData.length) || 0) / 5));
-        console.log('Updated reviews:', reviewsData);
-      }
+      const response = await productAPI.getProductReviews(productId);
+      setReviews(response.reviews || []);
+      setTotalPages(Math.ceil((response.reviews?.length || 0) / 5));
     } catch (err) {
-      console.error('Error refreshing reviews:', err);
+      console.error('Error refreshing reviews:', err.message);
     }
   };
 
@@ -483,6 +198,14 @@ const ProductReviews = ({ productId }) => {
       navigate('/login', { state: { redirect: `/products/${productId}` } });
       return;
     }
+    
+    // Show notification when user already has a review
+    if (userReview) {
+      setReviewNotification("You've already reviewed this product. You can edit your existing review below.");
+    } else {
+      setReviewNotification(null);
+    }
+    
     setDialogOpen(true);
     if (userReview) {
       formik.setValues({
@@ -538,7 +261,7 @@ const ProductReviews = ({ productId }) => {
             fullWidth
             onClick={handleOpenReviewDialog}
           >
-            {userReview ? 'Edit Your Review' : 'Write a Review'}
+            Review This Product
           </Button>
         </CardContent>
       </Card>
@@ -637,7 +360,11 @@ const ProductReviews = ({ productId }) => {
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                         <Button
                           size="small" 
-                          onClick={handleOpenReviewDialog}
+                          onClick={() => {
+                            // Set userReview to this specific review before opening dialog
+                            setUserReview(review);
+                            setDialogOpen(true);
+                          }}
                           variant="outlined"
                           sx={{ mr: 1 }}
                         >
@@ -671,6 +398,12 @@ const ProductReviews = ({ productId }) => {
         </DialogTitle>
         <form onSubmit={formik.handleSubmit}>
           <DialogContent dividers>
+            {reviewNotification && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                {reviewNotification}
+              </Alert>
+            )}
+            
             <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Typography component="legend" gutterBottom>
                 Your Rating*
