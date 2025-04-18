@@ -9,6 +9,7 @@ import categoryReducer from './slices/categorySlice';
 import orderReducer from './slices/orderSlice';
 import wishlistReducer from './slices/wishlistSlice';
 import uiReducer from './slices/uiSlice';
+import adminCouponReducer from './slices/adminCouponSlice';
 
 const persistConfig = {
   key: 'root',
@@ -23,7 +24,8 @@ const rootReducer = combineReducers({
   categories: categoryReducer,
   orders: orderReducer,
   wishlist: wishlistReducer,
-  ui: uiReducer
+  ui: uiReducer,
+  adminCoupons: adminCouponReducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

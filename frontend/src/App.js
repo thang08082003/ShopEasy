@@ -30,6 +30,8 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminOrderDetail from './pages/admin/AdminOrderDetail';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import CouponListPage from './pages/admin/CouponListPage';
+import CouponFormPage from './pages/admin/CouponFormPageSimple';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isAdmin = false }) => {
@@ -126,6 +128,21 @@ const App = () => {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="orders/:id" element={<AdminOrderDetail />} />
         <Route path="analytics" element={<AdminAnalytics />} />
+        <Route path="coupons" element={
+          <ProtectedRoute isAdmin={true}>
+            <CouponListPage />
+          </ProtectedRoute>
+        } />
+        <Route path="coupons/create" element={
+          <ProtectedRoute isAdmin={true}>
+            <CouponFormPage />
+          </ProtectedRoute>
+        } />
+        <Route path="coupons/:id/edit" element={
+          <ProtectedRoute isAdmin={true}>
+            <CouponFormPage />
+          </ProtectedRoute>
+        } />
       </Route>
       
       {/* Not Found */}

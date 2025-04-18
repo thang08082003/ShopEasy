@@ -36,7 +36,8 @@ import {
   Settings as SettingsIcon,
   AccountCircle,
   Logout as LogoutIcon,
-  ShoppingBag
+  ShoppingBag,
+  LocalOffer as CouponIcon
 } from '@mui/icons-material';
 
 // Drawer width
@@ -53,13 +54,13 @@ const AdminLayout = () => {
   const [open, setOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState(null);
   
-  // Menu items - remove the Users entry
+  // Menu items - add the Coupons entry
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
     { text: 'Products', icon: <ProductsIcon />, path: '/admin/products' },
     { text: 'Categories', icon: <CategoryIcon />, path: '/admin/categories' },
-    { text: 'Orders', icon: <OrdersIcon />, path: '/admin/orders' }
-    // Users item removed
+    { text: 'Orders', icon: <OrdersIcon />, path: '/admin/orders' },
+    { text: 'Coupons', icon: <CouponIcon />, path: '/admin/coupons' }
   ];
   
   const handleDrawerToggle = () => {

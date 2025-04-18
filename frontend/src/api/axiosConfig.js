@@ -13,9 +13,12 @@ const api = axios.create({
 // Add a request interceptor to include auth token in headers
 api.interceptors.request.use(
   (config) => {
-    const { auth } = store.getState();
-    if (auth.token) {
-      config.headers.Authorization = `Bearer ${auth.token}`;
+    const token = localStorage.getItem('token') || JSON.parse(localStorage.getItem('persist:root'))?.auth
+      ? JSON.parse(JSON.parse(localStorage.getItem('persist:root')).auth).token
+      : null;
+      
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     
     // Log all outgoing requests in development

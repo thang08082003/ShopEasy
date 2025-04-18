@@ -84,15 +84,16 @@ const AdminDashboard = () => {
     labels: dashboardData.dailyRevenue.map(item => item.date),
     datasets: [
       {
-        label: 'Revenue',
+        label: 'Revenue ($)',
         data: dashboardData.dailyRevenue.map(item => item.revenue),
         backgroundColor: theme.palette.primary.main,
         borderColor: theme.palette.primary.main,
-        tension: 0.4
+        tension: 0.4,
+        yAxisID: 'y'
       },
       {
-        label: 'Orders',
-        data: dashboardData.dailyRevenue.map(item => item.orders * 20), // Scale for visibility
+        label: 'Orders (paid)',
+        data: dashboardData.dailyRevenue.map(item => item.orders), // Remove scaling factor
         backgroundColor: theme.palette.secondary.main,
         borderColor: theme.palette.secondary.main,
         tension: 0.4,
@@ -192,6 +193,9 @@ const AdminDashboard = () => {
       <Typography variant="h6" gutterBottom>
         Sales Overview (Last 7 Days)
       </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+       
+      </Typography>
       {loading ? (
         <Skeleton variant="rectangular" height={300} />
       ) : salesChartData ? (
@@ -212,9 +216,36 @@ const AdminDashboard = () => {
                 y1: {
                   beginAtZero: true,
                   position: 'right',
+                  grid: {
+                    drawOnChartArea: false // Only show grid lines for revenue
+                  },
                   title: {
                     display: true,
-                    text: 'Orders'
+                    text: 'Order Count'
+                  },
+                  // Set the maximum to make orders more visible
+                  max: Math.max(...dashboardData.dailyRevenue.map(item => item.orders)) * 1.5 || 5,
+                  ticks: {
+                    stepSize: 1, // Ensure whole numbers for order counts
+                    precision: 0
+                  }
+                }
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      let label = context.dataset.label || '';
+                      if (label) {
+                        label += ': ';
+                      }
+                      if (context.dataset.yAxisID === 'y') {
+                        label += '$' + context.parsed.y.toFixed(2);
+                      } else {
+                        label += context.parsed.y + ' orders';
+                      }
+                      return label;
+                    }
                   }
                 }
               }
