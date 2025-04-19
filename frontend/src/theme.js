@@ -82,6 +82,19 @@ const theme = createTheme({
         },
       },
     },
+    MuiCssBaseline: {
+      styleOverrides: `
+        /* Ensure MUI components have higher specificity than Bootstrap */
+        .MuiButtonBase-root {
+          box-shadow: none !important;
+        }
+        
+        /* Prevent Bootstrap from affecting Material UI form controls */
+        .MuiInputBase-root, .MuiOutlinedInput-root {
+          box-shadow: none !important;
+        }
+      `,
+    },
   },
 });
 

@@ -329,11 +329,11 @@ const MainLayout = () => {
             >
               <Box
                 component="img"
-                src="/2.jpg"
+                src="/3.png"
                 alt="ShopEasy Logo"
                 sx={{ 
-                  height: 45,
-                  width: 45,
+                  height: 40,
+                  width: 40,
                   borderRadius: '80%',
                   objectFit: 'cover',
                   border: '2px solid',

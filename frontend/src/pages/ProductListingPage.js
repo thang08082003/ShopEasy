@@ -17,8 +17,6 @@ import {
   Select,
   MenuItem,
   Pagination,
-  TextField,
-  Slider,
   Checkbox,
   FormControlLabel,
   Button,
@@ -60,6 +58,7 @@ const ProductListingPage = () => {
     category: query.get('category') || '',
     price_min: query.get('price_min') || '',
     price_max: query.get('price_max') || '',
+    price_range: query.get('price_range') || '',
     sort: query.get('sort') || '-createdAt',
     in_stock: query.get('in_stock') === 'true',
     page: parseInt(query.get('page') || '1', 10),
@@ -67,6 +66,12 @@ const ProductListingPage = () => {
 
   // Add error state to track API errors
   const [apiError, setApiError] = useState(null);
+
+  // Add state for price validation errors
+  const [priceErrors, setPriceErrors] = useState({
+    min: false,
+    max: false
+  });
   
   // Function to build query parameters from filters
   const buildQueryParams = (filters) => {
@@ -74,11 +79,45 @@ const ProductListingPage = () => {
     
     if (filters.search) queryParams.search = filters.search;
     if (filters.category) queryParams.category = filters.category;
-    if (filters.price_min) queryParams.price_min = filters.price_min;
-    if (filters.price_max) queryParams.price_max = filters.price_max;
+    
+    // Handle price range selection
+    if (filters.price_range) {
+ 
+      
+      // Convert price range to min/max values
+      switch (filters.price_range) {
+        case 'under10':
+          queryParams.price_max = '10';
+          break;
+        case 'under100':
+          queryParams.price_max = '100';
+          break;
+        case 'under1000':
+          queryParams.price_max = '1000';
+          break;
+        case 'over1000':
+          queryParams.price_min = '1000';
+          break;
+        default:
+          // If no specific range selected, don't add price filters
+          break;
+      }
+    } else {
+      // If no price range is selected, use the original min/max values if provided
+      if (filters.price_min) queryParams.price_min = filters.price_min;
+      if (filters.price_max) queryParams.price_max = filters.price_max;
+    }
+    
     if (filters.sort) queryParams.sort = filters.sort;
     if (filters.in_stock) queryParams.in_stock = filters.in_stock;
     if (filters.page > 1) queryParams.page = filters.page;
+    
+    // Add debug logging for price filters
+    console.log('Price filters:', {
+      price_range: filters.price_range,
+      price_min: queryParams.price_min,
+      price_max: queryParams.price_max
+    });
     
     return queryParams;
   };
@@ -94,6 +133,14 @@ const ProductListingPage = () => {
         console.log('ProductListingPage: Products fetched successfully:', result);
         if (result.data.length === 0) {
           console.warn('ProductListingPage: No products returned from API');
+        } else {
+          console.log(`ProductListingPage: ${result.data.length} products returned`);
+          // Log price range of returned products for debugging
+          const priceRange = {
+            min: Math.min(...result.data.map(p => p.price)),
+            max: Math.max(...result.data.map(p => p.price))
+          };
+          console.log('Price range of returned products:', priceRange);
         }
       })
       .catch(error => {
@@ -157,15 +204,22 @@ const ProductListingPage = () => {
     }));
   };
   
+  // Reset errors when filters are reset
   const handleReset = () => {
     setFilters({
       search: '',
       category: '',
       price_min: '',
       price_max: '',
+      price_range: '',
       sort: '-createdAt',
       in_stock: false,
       page: 1,
+    });
+    // Also reset price errors
+    setPriceErrors({
+      min: false,
+      max: false
     });
   };
   
@@ -213,28 +267,20 @@ const ProductListingPage = () => {
         {/* Price Range */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" gutterBottom>Price Range</Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                label="Min"
-                type="number"
-                size="small"
-                fullWidth
-                value={filters.price_min}
-                onChange={(e) => handleFilterChange('price_min', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="Max"
-                type="number"
-                size="small"
-                fullWidth
-                value={filters.price_max}
-                onChange={(e) => handleFilterChange('price_max', e.target.value)}
-              />
-            </Grid>
-          </Grid>
+          <FormControl fullWidth size="small">
+            <InputLabel>Select Price Range</InputLabel>
+            <Select
+              value={filters.price_range}
+              label="Select Price Range"
+              onChange={(e) => handleFilterChange('price_range', e.target.value)}
+            >
+              <MenuItem value="">All Prices</MenuItem>
+              <MenuItem value="under10">Under $10</MenuItem>
+              <MenuItem value="under100">Under $100</MenuItem>
+              <MenuItem value="under1000">Under $1000</MenuItem>
+              <MenuItem value="over1000">Over $1000</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
         
         {/* Stock Filter */}
@@ -259,6 +305,11 @@ const ProductListingPage = () => {
               value={filters.sort}
               label="Sort"
               onChange={(e) => handleFilterChange('sort', e.target.value)}
+              MenuProps={{
+                PaperProps: {
+                  style: { maxHeight: 300 }
+                }
+              }}
             >
               <MenuItem value="-createdAt">Newest First</MenuItem>
               <MenuItem value="createdAt">Oldest First</MenuItem>
