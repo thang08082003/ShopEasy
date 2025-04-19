@@ -35,7 +35,15 @@ import {
   CircularProgress
 } from '@mui/material';
 
-const steps = ['Shipping Address', 'Payment Method', 'Review Order'];
+// Update the steps to include shipping method
+const steps = ['Shipping Address', 'Shipping Method', 'Payment', 'Review'];
+
+// Add shipping method options
+const shippingMethods = [
+  { id: 'standard', name: 'Standard Shipping', price: 5.99, description: 'Delivery in 5-7 business days', days: '5-7' },
+  { id: 'express', name: 'Express Shipping', price: 12.99, description: 'Delivery in 2-3 business days', days: '2-3' },
+  { id: 'overnight', name: 'Overnight Shipping', price: 24.99, description: 'Next business day delivery', days: '1' }
+];
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -45,6 +53,7 @@ const CheckoutPage = () => {
   const [orderError, setOrderError] = useState(null);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [shipping, setShipping] = useState(5.99); // Default to standard shipping fee
   
   // Get cart state from Redux
   const { items, totalAmount, discountedAmount, coupon } = useSelector(state => state.cart);
@@ -53,7 +62,6 @@ const CheckoutPage = () => {
   // Calculate totals
   const cartTotal = totalAmount || 0;
   const discount = coupon ? (totalAmount - discountedAmount) : 0;
-  const shipping = cartTotal > 50 ? 0 : 10; // Free shipping over $50
   const tax = Math.round((cartTotal - discount) * 0.1 * 100) / 100; // 10% tax
   const orderTotal = cartTotal - discount + shipping + tax;
   
@@ -104,11 +112,14 @@ const CheckoutPage = () => {
       cardName: '',
       cardNumber: '',
       expiryDate: '',
-      cvv: ''
+      cvv: '',
+
+      // Shipping method
+      shippingMethod: 'standard',
     },
     validationSchema: activeStep === 0 
       ? shippingAddressSchema 
-      : (activeStep === 1 ? paymentMethodSchema : null),
+      : (activeStep === 2 ? paymentMethodSchema : null),
     onSubmit: () => {
       if (activeStep === steps.length - 1) {
         handlePlaceOrder();
@@ -117,6 +128,14 @@ const CheckoutPage = () => {
       }
     }
   });
+
+  // Update shipping fee whenever shipping method changes
+  useEffect(() => {
+    const selectedMethod = shippingMethods.find(method => method.id === formik.values.shippingMethod);
+    if (selectedMethod) {
+      setShipping(selectedMethod.price);
+    }
+  }, [formik.values.shippingMethod]);
   
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -141,8 +160,15 @@ const CheckoutPage = () => {
           country: formik.values.country
         },
         paymentMethod: formik.values.paymentMethod,
+        shippingMethod: formik.values.shippingMethod,
         shippingFee: shipping,
-        tax: tax
+        tax: tax,
+        // Only send coupon ID if it exists and has an _id
+        coupon: coupon && coupon._id ? coupon._id : undefined,
+        couponCode: coupon ? coupon.code : null,
+        originalAmount: totalAmount,
+        discountAmount: discount,
+        finalAmount: orderTotal
       };
       
       // Submit order to API
@@ -273,6 +299,59 @@ const CheckoutPage = () => {
         return (
           <Grid container spacing={3}>
             <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Select Shipping Method
+              </Typography>
+              {shippingMethods.map((method) => (
+                <Paper
+                  key={method.id}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    border: method.id === formik.values.shippingMethod
+                      ? '2px solid'
+                      : '1px solid',
+                    borderColor: method.id === formik.values.shippingMethod
+                      ? 'primary.main'
+                      : 'divider',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: 1
+                    }
+                  }}
+                  onClick={() => formik.setFieldValue('shippingMethod', method.id)}
+                >
+                  <Grid container alignItems="center" justifyContent="space-between">
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle1" fontWeight={method.id === formik.values.shippingMethod ? 'bold' : 'regular'}>
+                        {method.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {method.description}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={3} textAlign="center">
+                      <Typography variant="body1" color="text.secondary">
+                        Delivery time: {method.days} days
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={3} textAlign="right">
+                      <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                        ${method.price.toFixed(2)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              ))}
+            </Grid>
+          </Grid>
+        );
+      case 2:
+        return (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
               <FormControl component="fieldset">
                 <FormLabel component="legend">Payment Method</FormLabel>
                 <RadioGroup
@@ -342,9 +421,9 @@ const CheckoutPage = () => {
             )}
           </Grid>
         );
-      case 2:
+      case 3:
         return (
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
                 Order Summary
@@ -418,6 +497,18 @@ const CheckoutPage = () => {
             
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
+                Shipping Method
+              </Typography>
+              <Typography gutterBottom>
+                {shippingMethods.find(method => method.id === formik.values.shippingMethod)?.name || 'Standard Shipping'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {shippingMethods.find(method => method.id === formik.values.shippingMethod)?.description || ''}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
                 Payment Method
               </Typography>
               <Typography gutterBottom>
@@ -431,7 +522,7 @@ const CheckoutPage = () => {
           </Grid>
         );
       default:
-        return 'Unknown step';
+        throw new Error('Unknown step');
     }
   };
   

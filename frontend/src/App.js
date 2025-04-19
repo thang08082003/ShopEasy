@@ -22,6 +22,8 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import WishlistPage from './pages/WishlistPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -111,6 +113,8 @@ const App = () => {
         />
         <Route path="login" element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} />
         <Route path="register" element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Route>
       
       {/* Admin Layout Routes */}

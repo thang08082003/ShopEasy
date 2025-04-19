@@ -80,9 +80,13 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     paymentStatus: 'pending',
     orderStatus: 'pending',
     totalAmount: cart.totalAmount,
+    discountAmount: cart.coupon ? (cart.totalAmount - cart.discountedAmount) : 0,
+    couponCode: cart.coupon ? cart.coupon.code : null,
+    // If coupon exists in cart and it has an _id, use it, otherwise leave it undefined
+    coupon: cart.coupon && cart.coupon._id ? cart.coupon._id : undefined,
     shippingFee: shippingFee || 0,
     tax: tax || 0,
-    grandTotal: cart.totalAmount + (shippingFee || 0) + (tax || 0)
+    grandTotal: (cart.discountedAmount || cart.totalAmount) + (shippingFee || 0) + (tax || 0)
   });
 
   // Update product stock

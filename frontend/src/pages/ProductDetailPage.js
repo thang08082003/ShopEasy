@@ -306,7 +306,6 @@ const ProductDetailPage = () => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
             <Tab label="Description" />
-            <Tab label="Specifications" />
             <Tab label="Reviews" />
           </Tabs>
         </Box>
@@ -320,32 +319,8 @@ const ProductDetailPage = () => {
           </Box>
         )}
         
-        {/* Specifications Tab */}
-        {activeTab === 1 && (
-          <Box sx={{ py: 3 }}>
-            {product.specifications && Object.keys(product.specifications).length > 0 ? (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableBody>
-                    {Object.entries(product.specifications).map(([key, value]) => (
-                      <TableRow key={key}>
-                        <TableCell component="th" scope="row" sx={{ fontWeight: 'bold', width: '30%' }}>
-                          {key}
-                        </TableCell>
-                        <TableCell>{value}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            ) : (
-              <Typography>No specifications available for this product.</Typography>
-            )}
-          </Box>
-        )}
-        
         {/* Reviews Tab */}
-        {activeTab === 2 && (
+        {activeTab === 1 && (
           <Box sx={{ py: 3 }}>
             <ProductReviews productId={product._id} />
           </Box>

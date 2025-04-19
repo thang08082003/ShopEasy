@@ -32,7 +32,11 @@ import {
 const WishlistPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { products, loading, error } = useSelector(state => state.wishlist);
+  const wishlist = useSelector(state => state.wishlist);
+  // Safely destructure and ensure items is always an array
+  const items = Array.isArray(wishlist?.items) ? wishlist.items : [];
+  const loading = wishlist?.loading || false;
+  const error = wishlist?.error || null;
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
   
   useEffect(() => {
@@ -81,7 +85,7 @@ const WishlistPage = () => {
     setSnackbar({ ...snackbar, open: false });
   };
   
-  // Wishlist skeleten loader
+  // Wishlist skeleton loader
   const renderSkeletons = () => (
     Array(4).fill().map((_, index) => (
       <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
@@ -115,7 +119,7 @@ const WishlistPage = () => {
         </Alert>
       )}
       
-      {!loading && products.length === 0 && !error && (
+      {!loading && items.length === 0 && !error && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <FavoriteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h5" gutterBottom>
@@ -137,8 +141,8 @@ const WishlistPage = () => {
       <Grid container spacing={3}>
         {loading ? (
           renderSkeletons()
-        ) : (
-          products.map(product => (
+        ) : Array.isArray(items) ? (
+          items.map(product => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardMedia
@@ -184,6 +188,12 @@ const WishlistPage = () => {
               </Card>
             </Grid>
           ))
+        ) : (
+          <Grid item xs={12}>
+            <Alert severity="error">
+              There was a problem loading your wishlist. Please try again.
+            </Alert>
+          </Grid>
         )}
       </Grid>
       

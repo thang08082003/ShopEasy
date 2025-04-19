@@ -1,34 +1,47 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import wishlistAPI from '../../api/wishlistAPI';
 
+// Get wishlist from localStorage safely
+let wishlistItems = [];
+try {
+  const storedItems = localStorage.getItem('wishlistItems');
+  if (storedItems) {
+    const parsed = JSON.parse(storedItems);
+    wishlistItems = Array.isArray(parsed) ? parsed : [];
+  }
+} catch (error) {
+  console.error('Error parsing wishlist from localStorage:', error);
+}
+
+// Async thunks
 export const fetchWishlist = createAsyncThunk(
   'wishlist/fetchWishlist',
-  async (_, { rejectWithValue, getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      if (!auth.token) return { products: [] };
-      
       const response = await wishlistAPI.getWishlist();
-      return response.data.data;
+      return response.data.data.products || [];
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to fetch wishlist');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch wishlist'
+      );
     }
   }
 );
 
 export const addToWishlist = createAsyncThunk(
   'wishlist/addToWishlist',
-  async (productId, { rejectWithValue, getState }) => {
+  async (product, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      if (!auth.token) {
-        return rejectWithValue('Please log in to add items to wishlist');
-      }
-      
-      const response = await wishlistAPI.addToWishlist(productId);
-      return response.data.data;
+      const response = await wishlistAPI.addToWishlist(product._id);
+      // Return both the product and the response data
+      return {
+        product,
+        wishlistData: response.data.data
+      };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to add to wishlist');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to add to wishlist'
+      );
     }
   }
 );
@@ -37,108 +50,92 @@ export const removeFromWishlist = createAsyncThunk(
   'wishlist/removeFromWishlist',
   async (productId, { rejectWithValue }) => {
     try {
-      const response = await wishlistAPI.removeFromWishlist(productId);
-      return { productId, data: response.data.data };
+      await wishlistAPI.removeFromWishlist(productId);
+      return productId; // Return the ID to remove from state
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to remove from wishlist');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to remove from wishlist'
+      );
     }
   }
 );
 
-export const updateWishlist = createAsyncThunk(
-  'wishlist/updateWishlist',
-  async (productIds, { rejectWithValue }) => {
-    try {
-      const response = await wishlistAPI.updateWishlist(productIds);
-      return response.data.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to update wishlist');
-    }
-  }
-);
-
-const initialState = {
-  products: [],
-  loading: false,
-  error: null
-};
-
+// Wishlist slice
 const wishlistSlice = createSlice({
   name: 'wishlist',
-  initialState,
+  initialState: {
+    items: Array.isArray(wishlistItems) ? wishlistItems : [],
+    loading: false,
+    error: null,
+  },
   reducers: {
-    clearWishlistError: (state) => {
-      state.error = null;
-    }
+    clearWishlist: (state) => {
+      state.items = [];
+      localStorage.setItem('wishlistItems', JSON.stringify([]));
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch wishlist
+      // Fetch wishlist cases
       .addCase(fetchWishlist.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchWishlist.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = action.payload.products || [];
+        // Ensure action.payload is an array before assigning to state.items
+        state.items = Array.isArray(action.payload) ? action.payload : [];
+        localStorage.setItem('wishlistItems', JSON.stringify(state.items));
       })
       .addCase(fetchWishlist.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
       
-      // Add to wishlist
+      // Add to wishlist cases
       .addCase(addToWishlist.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(addToWishlist.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = action.payload.products || [];
+        
+        // Check if we have products from the wishlist data
+        if (action.payload.wishlistData && action.payload.wishlistData.products) {
+          // Use the complete updated wishlist from API
+          state.items = action.payload.wishlistData.products;
+        } else {
+          // Fallback: Just add the product to the current items
+          const productToAdd = action.payload.product;
+          // Only add if not already in the list
+          if (!state.items.some(item => item._id === productToAdd._id)) {
+            state.items.push(productToAdd);
+          }
+        }
+        localStorage.setItem('wishlistItems', JSON.stringify(state.items));
       })
       .addCase(addToWishlist.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
       
-      // Remove from wishlist
+      // Remove from wishlist cases
       .addCase(removeFromWishlist.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(removeFromWishlist.fulfilled, (state, action) => {
         state.loading = false;
-        // If the API returns updated wishlist data
-        if (action.payload.data && action.payload.data.products) {
-          state.products = action.payload.data.products;
-        } else {
-          // Otherwise filter out the removed product
-          state.products = state.products.filter(
-            product => product._id !== action.payload.productId
-          );
-        }
+        // Filter the item out immediately for better UI responsiveness
+        state.items = state.items.filter(item => item._id !== action.payload);
+        localStorage.setItem('wishlistItems', JSON.stringify(state.items));
       })
       .addCase(removeFromWishlist.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      
-      // Update wishlist
-      .addCase(updateWishlist.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateWishlist.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = action.payload.products || [];
-      })
-      .addCase(updateWishlist.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       });
-  }
+  },
 });
 
-export const { clearWishlistError } = wishlistSlice.actions;
-
+export const { clearWishlist } = wishlistSlice.actions;
 export default wishlistSlice.reducer;

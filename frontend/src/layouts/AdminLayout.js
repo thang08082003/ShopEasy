@@ -119,14 +119,32 @@ const AdminLayout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            sx={{ flexGrow: 1, cursor: 'pointer' }}
+          
+          {/* Logo with ShopEasy Admin text */}
+          <Box 
+            component="div" 
+            sx={{ 
+              display: 'flex',
+              alignItems: 'center',
+              flexGrow: 1, 
+              cursor: 'pointer'
+            }}
             onClick={() => navigate('/')}
           >
-            ShopEasy Admin
-          </Typography>
+            <Box
+              component="img"
+              src="/Untitled-1-01.png"
+              alt="ShopEasy Logo"
+              sx={{ 
+                height: 60,
+                maxHeight: '100%',
+                width: 'auto'
+              }}
+            />
+            <Typography variant="h6" noWrap sx={{ ml: 1 }}>
+              ShopEasy Admin
+            </Typography>
+          </Box>
           
           <Tooltip title="View Store">
             <IconButton
@@ -222,15 +240,6 @@ const AdminLayout = () => {
                 />
               </ListItem>
             ))}
-          </List>
-          <Divider />
-          <List>
-            <ListItem button onClick={() => handleNavigate('/admin/settings')}>
-              <ListItemIcon>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Settings" />
-            </ListItem>
           </List>
         </Box>
       </Drawer>

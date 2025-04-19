@@ -1,27 +1,23 @@
 const express = require('express');
-const {
-  register,
-  login,
-  getProfile,
-  updateProfile,
-  forgotPassword,
-  resetPassword,
-  promoteToAdmin
-} = require('../controllers/authController');
-
+const router = express.Router();
 const { protect, authorize } = require('../middlewares/auth');
+const authController = require('../controllers/authController');
 const { registerValidation, loginValidation, validate } = require('../middlewares/validation');
 
-const router = express.Router();
+// Public routes
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/forgot-password', authController.forgotPassword);
+router.put('/reset-password', authController.resetPassword);
 
-router.post('/register', registerValidation, validate, register);
-router.post('/login', loginValidation, validate, login);
-router.get('/profile', protect, getProfile);
-router.put('/profile', protect, updateProfile);
-router.post('/forgot-password', forgotPassword);
-router.put('/reset-password', resetPassword);
+// Protected routes
+router.get('/profile', protect, authController.getProfile);
+router.put('/profile', protect, authController.updateProfile);
+
+// Ensure this route is properly defined
+router.put('/change-password', protect, authController.changePassword);
 
 // Admin routes
-router.put('/promote/:id', protect, authorize('admin'), promoteToAdmin);
+router.put('/promote/:id', protect, authorize('admin'), authController.promoteToAdmin);
 
 module.exports = router;

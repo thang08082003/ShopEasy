@@ -90,12 +90,12 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('User not found with that email', 404));
   }
 
-  // In a real application, generate reset token and send email
-  // For this example, we'll just return a success message
-  
+  // Instead of generating and sending a token, we now allow the email to be used for direct reset
   res.status(200).json({
     success: true,
-    message: 'Password reset email sent'
+    message: 'Email verified successfully, you can now reset your password',
+    verified: true,
+    email: req.body.email
   });
 });
 
@@ -103,13 +103,75 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/auth/reset-password
 // @access  Public
 exports.resetPassword = asyncHandler(async (req, res, next) => {
-  // In a real application, verify token and reset password
-  // For this example, we'll just return a success message
+  const { email, password } = req.body;
+  
+  // Find user by email instead of token
+  const user = await User.findOne({ email });
+  
+  if (!user) {
+    return next(new ErrorResponse('Invalid email address', 400));
+  }
+  
+  // Update password
+  user.password = password;
+  await user.save();
   
   res.status(200).json({
     success: true,
-    message: 'Password has been reset'
+    message: 'Password has been reset successfully'
   });
+});
+
+// @desc    Change password
+// @route   PUT /api/auth/change-password
+// @access  Private
+exports.changePassword = asyncHandler(async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+  console.log('Change password request received:', { userId: req.user.id });
+  
+  // Check if both passwords are provided
+  if (!currentPassword || !newPassword) {
+    return next(new ErrorResponse('Please provide both current and new password', 400));
+  }
+
+  try {
+    // Get user with password
+    const user = await User.findById(req.user.id).select('+password');
+    console.log('User found:', { userId: user._id, email: user.email });
+
+    if (!user) {
+      return next(new ErrorResponse('User not found', 404));
+    }
+
+    // Check if current password matches
+    const isPasswordMatch = await user.matchPassword(currentPassword);
+    
+    if (!isPasswordMatch) {
+      return next(new ErrorResponse('Current password is incorrect', 401));
+    }
+
+    // Direct DB update approach - bypassing Mongoose validation
+    // Use this if the pre-save middleware isn't working
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Update password directly in database
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword } }
+    );
+    
+    console.log('Password updated successfully for user:', user.email);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    console.error('Error in password update:', error);
+    return next(new ErrorResponse(`Failed to update password: ${error.message}`, 500));
+  }
 });
 
 // @desc    Promote user to admin role

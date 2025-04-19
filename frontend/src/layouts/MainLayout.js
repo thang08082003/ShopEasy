@@ -315,15 +315,45 @@ const MainLayout = () => {
             >
               <MenuIcon />
             </IconButton>
-            <Typography
-              variant="h6"
-              noWrap
-              component="div"
-              sx={{ display: { sm: 'block' }, cursor: 'pointer' }}
+            
+            {/* Logo with ShopEasy text */}
+            <Box 
+              component="div" 
+              sx={{ 
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                mr: 2
+              }}
               onClick={() => navigate('/')}
             >
-              ShopEasy
-            </Typography>
+              <Box
+                component="img"
+                src="/2.jpg"
+                alt="ShopEasy Logo"
+                sx={{ 
+                  height: 45,
+                  width: 45,
+                  borderRadius: '80%',
+                  objectFit: 'cover',
+                  border: '2px solid',
+                  borderColor: 'primary.light',
+                  p: 0,
+                  bgcolor: 'white'
+                }}
+              />
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{ 
+                  fontWeight: 'bold',
+                  ml: 1
+                }}
+              >
+                ShopEasy
+              </Typography>
+            </Box>
             
             <Box component="form" sx={searchStyles(theme)} onSubmit={handleSearch}>
               <Box sx={searchIconStyles(theme)}>
