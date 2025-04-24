@@ -64,3 +64,132 @@ code {
   opacity: 0;
   transition: opacity 300ms;
 }
+
+/* Responsive Utilities */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-center {
+    text-align: center !important;
+    justify-content: center !important;
+  }
+  
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  .mobile-small-text {
+    font-size: 0.875rem !important;
+  }
+  
+  .mobile-p-1 {
+    padding: 8px !important;
+  }
+  
+  .mobile-p-2 {
+    padding: 16px !important;
+  }
+  
+  .mobile-my-1 {
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .mobile-my-2 {
+    margin-top: 16px !important;
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Table Responsive */
+@media (max-width: 600px) {
+  .responsive-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .responsive-table::-webkit-scrollbar {
+    height: 4px;
+  }
+}
+
+/* Touch-friendly targets */
+@media (max-width: 600px) {
+  button, 
+  [role="button"],
+  .MuiButtonBase-root {
+    min-height: 42px;
+    min-width: 42px;
+  }
+  
+  .touch-friendly {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Additional Mobile Improvements */
+@media (max-width: 600px) {
+  /* Improve search field tap area */
+  input[type="text"],
+  input[type="search"],
+  .MuiInputBase-input {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+  
+  /* Increased tap targets for buttons */
+  button,
+  [role="button"],
+  .MuiButtonBase-root {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  
+  /* Hide scrollbar while maintaining functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+  
+  /* Focus visible indicators for accessibility */
+  :focus-visible {
+    outline: 3px solid rgba(144, 21, 28, 0.5) !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Prevent input zoom on iOS */
+@media screen and (-webkit-min-device-pixel-ratio:0) { 
+  select,
+  textarea,
+  input[type="text"],
+  input[type="search"],
+  input[type="password"],
+  input[type="number"] {
+    font-size: 16px !important;
+  }
+}

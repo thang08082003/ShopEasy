@@ -44,6 +44,7 @@ const Banner = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   
   const [activeBanner, setActiveBanner] = useState(0);
   
@@ -65,15 +66,15 @@ const Banner = () => {
         position: 'relative',
         backgroundColor: 'grey.800',
         color: '#fff',
-        mb: 4,
+        mb: isMobile ? 2 : 4,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
         backgroundImage: `url(${currentBanner.image})`,
-        height: isMobile ? 300 : 400,
+        height: isMobile ? 200 : isTablet ? 300 : 400,
         display: 'flex',
         alignItems: 'center',
-        borderRadius: 2,
+        borderRadius: isMobile ? 1 : 2,
         overflow: 'hidden',
       }}
     >
@@ -94,29 +95,43 @@ const Banner = () => {
         <Box 
           sx={{ 
             position: 'relative', 
-            p: { xs: 3, md: 6 },
+            p: { 
+              xs: 2, 
+              sm: 3, 
+              md: 6 
+            },
             textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
           }}
         >
           <Typography 
             component="h2" 
-            variant={isMobile ? 'h4' : 'h3'} 
+            variant={isMobile ? 'h5' : isTablet ? 'h4' : 'h3'} 
             color="inherit" 
             gutterBottom
-            sx={{ fontWeight: 'bold' }}
+            sx={{ 
+              fontWeight: 'bold',
+              mb: isMobile ? 0.5 : 1
+            }}
           >
             {currentBanner.title}
           </Typography>
           <Typography 
-            variant={isMobile ? 'body1' : 'h6'} 
+            variant={isMobile ? 'body2' : isTablet ? 'body1' : 'h6'} 
             color="inherit" 
             paragraph
+            sx={{
+              mb: isMobile ? 1 : 2,
+              display: isMobile ? '-webkit-box' : 'block',
+              WebkitLineClamp: isMobile ? 2 : 'unset',
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
           >
             {currentBanner.subtitle}
           </Typography>
           <Button 
             variant="contained" 
-            size="large" 
+            size={isMobile ? "small" : "large"} 
             color={currentBanner.color}
             onClick={() => navigate(currentBanner.url)}
           >
@@ -128,7 +143,7 @@ const Banner = () => {
       {/* Banner Indicators */}
       <Box sx={{ 
         position: 'absolute', 
-        bottom: 20, 
+        bottom: isMobile ? 10 : 20, 
         left: 0, 
         right: 0, 
         display: 'flex', 
@@ -138,8 +153,8 @@ const Banner = () => {
           <Box
             key={index}
             sx={{
-              width: 12,
-              height: 12,
+              width: isMobile ? 8 : 12,
+              height: isMobile ? 8 : 12,
               borderRadius: '50%',
               mx: 0.5,
               backgroundColor: index === activeBanner ? 'white' : 'rgba(255,255,255,0.5)',

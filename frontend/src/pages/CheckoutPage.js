@@ -35,8 +35,8 @@ import {
   CircularProgress
 } from '@mui/material';
 
-// Update the steps to include shipping method
-const steps = ['Shipping Address', 'Shipping Method', 'Payment', 'Review'];
+// Update the steps to include shipping method but without text
+const steps = ['', '', '', ''];
 
 // Add shipping method options
 const shippingMethods = [
@@ -570,9 +570,9 @@ const CheckoutPage = () => {
         ) : (
           <>
             <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
+              {steps.map((label, index) => (
+                <Step key={index}>
+                  <StepLabel></StepLabel>
                 </Step>
               ))}
             </Stepper>

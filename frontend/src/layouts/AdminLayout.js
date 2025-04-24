@@ -33,15 +33,17 @@ import {
   Category as CategoryIcon,
   ListAlt as OrdersIcon,
   ShoppingBag as ProductsIcon,
-  Settings as SettingsIcon,
   AccountCircle,
   Logout as LogoutIcon,
   ShoppingBag,
   LocalOffer as CouponIcon
 } from '@mui/icons-material';
 
-// Drawer width
-const drawerWidth = 240;
+// Drawer width - responsive
+const drawerWidth = {
+  xs: '100%',
+  sm: 240
+};
 
 const AdminLayout = () => {
   const theme = useTheme();
@@ -51,7 +53,7 @@ const AdminLayout = () => {
   const dispatch = useDispatch();
   
   const { user } = useSelector(state => state.auth);
-  const [open, setOpen] = useState(!isMobile);
+  const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   
   // Menu items - add the Coupons entry
@@ -82,9 +84,8 @@ const AdminLayout = () => {
   
   const handleNavigate = (path) => {
     navigate(path);
-    if (isMobile) {
-      setOpen(false);
-    }
+    
+    setOpen(false);
   };
   
   // Check if menu item is active
@@ -103,19 +104,26 @@ const AdminLayout = () => {
       <AppBar
         position="fixed"
         sx={{
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          zIndex: (theme) => theme.zIndex.drawer + 2, 
           backgroundColor: 'background.paper',
-          color: 'text.primary'
+          color: 'text.primary',
+          width: '100%', // Always full width
+          transition: (theme) => theme.transitions.create('width'),
         }}
         elevation={1}
       >
-        <Toolbar>
+        <Toolbar sx={{ 
+          pr: isMobile ? 1 : 2,
+        }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
+            sx={{ 
+              
+              ml: isMobile ? 1 : 0 
+            }}
           >
             <MenuIcon />
           </IconButton>
@@ -136,13 +144,13 @@ const AdminLayout = () => {
               src="/Untitled-1-01.png"
               alt="ShopEasy Logo"
               sx={{ 
-                height: 60,
+                height: isMobile ? 40 : 60,
                 maxHeight: '100%',
                 width: 'auto'
               }}
             />
-            <Typography variant="h6" noWrap sx={{ ml: 1 }}>
-              ShopEasy Admin
+            <Typography variant={isMobile ? "subtitle1" : "h6"} noWrap sx={{ ml: 1 }}>
+              {isMobile ? "Admin" : "ShopEasy Admin"}
             </Typography>
           </Box>
           
@@ -151,9 +159,9 @@ const AdminLayout = () => {
               color="inherit"
               edge="end"
               onClick={() => navigate('/')}
-              sx={{ mr: 2 }}
+              sx={{ mr: isMobile ? 1 : 2 }}
             >
-              <ShoppingBag />
+              <ShoppingBag fontSize={isMobile ? "small" : "medium"} />
             </IconButton>
           </Tooltip>
           
@@ -163,13 +171,16 @@ const AdminLayout = () => {
               color="inherit"
               edge="end"
               aria-label="account"
+              sx={{ 
+                mr: isMobile ? 1 : 0 
+              }}
             >
               {user?.name ? (
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                <Avatar sx={{ width: isMobile ? 24 : 32, height: isMobile ? 24 : 32, bgcolor: 'primary.main' }}>
                   {user.name.charAt(0).toUpperCase()}
                 </Avatar>
               ) : (
-                <AccountCircle />
+                <AccountCircle fontSize={isMobile ? "small" : "medium"} />
               )}
             </IconButton>
           </Tooltip>
@@ -195,21 +206,44 @@ const AdminLayout = () => {
         </Toolbar>
       </AppBar>
       
+      {/* Overlay that appears when drawer is open */}
+      {open && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent gray overlay
+            zIndex: (theme) => theme.zIndex.drawer,
+            display: { xs: 'none', md: 'block' }, // Only show on larger screens
+          }}
+          onClick={handleDrawerToggle}
+        />
+      )}
+      
       {/* Drawer */}
       <Drawer
-        variant={isMobile ? "temporary" : "persistent"}
-        open={isMobile ? open : true}
-        onClose={isMobile ? handleDrawerToggle : null}
+        variant={isMobile ? "temporary" : "temporary"} // Changed to temporary for all devices
+        open={open}
+        onClose={handleDrawerToggle}
         sx={{
-          width: drawerWidth,
+          width: isMobile ? '80%' : drawerWidth.sm,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: drawerWidth,
+            width: isMobile ? '80%' : drawerWidth.sm,
             boxSizing: 'border-box',
+            top: '64px', // Positioned below the AppBar
+            height: 'calc(100% - 64px)', // Adjust height to account for AppBar
+            [theme.breakpoints.down('sm')]: {
+              top: '56px', // Mobile AppBar is shorter
+              height: 'calc(100% - 56px)'
+            },
+            zIndex: (theme) => theme.zIndex.drawer + 1, // Higher z-index to overlay content
           },
         }}
       >
-        <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
             {menuItems.map((item) => (
@@ -219,6 +253,7 @@ const AdminLayout = () => {
                 onClick={() => handleNavigate(item.path)}
                 selected={isActive(item.path)}
                 sx={{
+                  py: isMobile ? 1.5 : 1,
                   '&.Mui-selected': {
                     backgroundColor: 'primary.light',
                     '&:hover': {
@@ -229,13 +264,17 @@ const AdminLayout = () => {
                   }
                 }}
               >
-                <ListItemIcon sx={{ color: isActive(item.path) ? 'primary.main' : 'inherit' }}>
+                <ListItemIcon sx={{ 
+                  color: isActive(item.path) ? 'primary.main' : 'inherit',
+                  minWidth: isMobile ? 40 : 56
+                }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText 
                   primary={item.text} 
                   primaryTypographyProps={{
-                    fontWeight: isActive(item.path) ? 'bold' : 'regular'
+                    fontWeight: isActive(item.path) ? 'bold' : 'regular',
+                    fontSize: isMobile ? '0.9rem' : 'inherit'
                   }}
                 />
               </ListItem>
@@ -245,10 +284,35 @@ const AdminLayout = () => {
       </Drawer>
       
       {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 0 }}>
-        <Toolbar />
-        <Container maxWidth="xl" sx={{ mt: 3 }}>
-          <Outlet />
+      <Box component="main" sx={{ 
+        flexGrow: 1, 
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center', // Center horizontally
+      }}>
+        <Toolbar /> {/* Keep this spacer for the AppBar */}
+        <Container 
+          maxWidth="xl" 
+          sx={{ 
+            mt: isMobile ? 2 : 3,
+            px: isMobile ? 1 : 3,
+            width: '100%',
+            // Center the container contents
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: '1200px', // Set a maximum width for the content
+              p: isMobile ? 2 : 3,
+            }}
+          >
+            <Outlet />
+          </Box>
         </Container>
       </Box>
     </Box>

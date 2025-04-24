@@ -70,7 +70,7 @@ const ProductCard = ({ product, loading = false }) => {
   if (loading) {
     return (
       <Card className="product-card-hover" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Skeleton variant="rectangular" height={200} />
+        <Skeleton variant="rectangular" height={160} />
         <CardContent>
           <Skeleton width="80%" height={24} />
           <Skeleton width="60%" height={20} sx={{ mt: 1 }} />
@@ -85,6 +85,7 @@ const ProductCard = ({ product, loading = false }) => {
   
   const { _id, name, price, salePrice, images, ratings } = product;
   const isOnSale = salePrice > 0 && salePrice < price;
+  const isMobile = window.innerWidth <= 600;
 
   return (
     <Card 
@@ -95,7 +96,7 @@ const ProductCard = ({ product, loading = false }) => {
         <Box sx={{ position: 'relative' }}>
           <CardMedia
             component="img"
-            height="200"
+            height={isMobile ? "140" : "200"}
             image={images?.[0] || "https://via.placeholder.com/200"}
             alt={name}
             sx={{ objectFit: 'contain' }}
@@ -109,24 +110,45 @@ const ProductCard = ({ product, loading = false }) => {
                 position: 'absolute',
                 top: 10,
                 right: 10,
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: isMobile ? '0.625rem' : '0.75rem',
+                height: isMobile ? 20 : 24
               }}
             />
           )}
         </Box>
-        <CardContent sx={{ flexGrow: 1 }}>
-          <Typography gutterBottom variant="h6" component="div" noWrap>
+        <CardContent sx={{ 
+          flexGrow: 1, 
+          p: isMobile ? 1.5 : 2
+        }}>
+          <Typography 
+            gutterBottom 
+            variant={isMobile ? "subtitle1" : "h6"} 
+            component="div" 
+            noWrap
+            sx={{ 
+              fontSize: isMobile ? '0.875rem' : 'inherit',
+              mb: isMobile ? 0.5 : 1  
+            }}
+          >
             {name}
           </Typography>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: isMobile ? 0.5 : 1 }}>
             <Rating 
               value={ratings?.average || 0} 
               precision={0.5} 
               size="small" 
               readOnly 
             />
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                ml: 1,
+                fontSize: isMobile ? '0.7rem' : 'inherit'
+              }}
+            >
               ({ratings?.count || 0})
             </Typography>
           </Box>
@@ -135,33 +157,55 @@ const ProductCard = ({ product, loading = false }) => {
             {isOnSale ? (
               <>
                 <Typography 
-                  variant="h6" 
+                  variant={isMobile ? "subtitle1" : "h6"} 
                   color="primary" 
-                  sx={{ fontWeight: 'bold', mr: 1 }}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    mr: 1,
+                    fontSize: isMobile ? '0.9rem' : 'inherit'
+                  }}
                 >
                   ${salePrice.toFixed(2)}
                 </Typography>
                 <Typography 
                   variant="body2" 
                   color="text.secondary" 
-                  sx={{ textDecoration: 'line-through' }}
+                  sx={{ 
+                    textDecoration: 'line-through',
+                    fontSize: isMobile ? '0.7rem' : 'inherit'
+                  }}
                 >
                   ${price.toFixed(2)}
                 </Typography>
               </>
             ) : (
-              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={isMobile ? "subtitle1" : "h6"} 
+                color="primary" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: isMobile ? '0.9rem' : 'inherit'
+                }}
+              >
                 ${price.toFixed(2)}
               </Typography>
             )}
           </Box>
         </CardContent>
       </CardActionArea>
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 1.5 }}>
+      <CardActions sx={{ 
+        justifyContent: 'space-between', 
+        px: isMobile ? 1.5 : 2, 
+        pb: isMobile ? 1 : 1.5 
+      }}>
         <Button 
           variant="contained" 
           color="primary" 
           size="small"
+          sx={{ 
+            fontSize: isMobile ? '0.75rem' : 'inherit',
+            py: isMobile ? 0.5 : 1
+          }}
         >
           Add to Cart
         </Button>
@@ -170,8 +214,9 @@ const ProductCard = ({ product, loading = false }) => {
           onClick={handleWishlistToggle}
           aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
           size="small"
+          sx={{ p: isMobile ? 0.5 : 1 }}
         >
-          {isInWishlist ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          {isInWishlist ? <FavoriteIcon fontSize={isMobile ? "small" : "medium"} /> : <FavoriteBorderIcon fontSize={isMobile ? "small" : "medium"} />}
         </IconButton>
       </CardActions>
     </Card>

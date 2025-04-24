@@ -21,7 +21,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -37,9 +36,6 @@ import {
   Edit as EditIcon,
   LocalShipping as ShippingIcon,
   Receipt as ReceiptIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
   Home as HomeIcon,
   Payment as PaymentIcon
 } from '@mui/icons-material';

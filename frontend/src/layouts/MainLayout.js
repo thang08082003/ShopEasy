@@ -31,7 +31,6 @@ import {
 // MUI Icons
 import {
   Menu as MenuIcon,
-  Search as SearchIcon,
   AccountCircle,
   Mail as MailIcon,
   ShoppingCart as ShoppingCartIcon,
@@ -60,23 +59,15 @@ const searchStyles = (theme) => ({
     marginLeft: 3,
     width: 'auto',
   },
-});
-
-const searchIconStyles = (theme) => ({
-  padding: 2,
-  height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
 });
 
 const inputBaseStyles = (theme) => ({
   color: 'inherit',
+  width: '100%',
   '& .MuiInputBase-input': {
-    padding: 1,
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    padding: theme.spacing(1),
     transition: theme.transitions.create('width'),
     width: '100%',
     [theme.breakpoints.up('md')]: {
@@ -304,13 +295,13 @@ const MainLayout = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="sticky">
         <Container maxWidth="xl">
-          <Toolbar>
+          <Toolbar sx={{ p: isMobile ? 1 : 2 }}>
             <IconButton
-              size="large"
+              size={isMobile ? "medium" : "large"}
               edge="start"
               color="inherit"
               aria-label="open drawer"
-              sx={{ mr: 2 }}
+              sx={{ mr: isMobile ? 1 : 2 }}
               onClick={toggleDrawer(true)}
             >
               <MenuIcon />
@@ -323,7 +314,8 @@ const MainLayout = () => {
                 display: 'flex',
                 alignItems: 'center',
                 cursor: 'pointer',
-                mr: 2
+                mr: isMobile ? 1 : 2,
+                flexShrink: 0
               }}
               onClick={() => navigate('/')}
             >
@@ -332,8 +324,8 @@ const MainLayout = () => {
                 src="/3.png"
                 alt="ShopEasy Logo"
                 sx={{ 
-                  height: 40,
-                  width: 40,
+                  height: isMobile ? 30 : 40,
+                  width: isMobile ? 30 : 40,
                   borderRadius: '80%',
                   objectFit: 'cover',
                   border: '2px solid',
@@ -343,32 +335,44 @@ const MainLayout = () => {
                 }}
               />
               <Typography
-                variant="h6"
+                variant={isMobile ? "body1" : "h6"}
                 noWrap
                 component="div"
                 sx={{ 
                   fontWeight: 'bold',
-                  ml: 1
+                  ml: isMobile ? 0.5 : 1,
+                  display: isMobile ? { xs: 'none', sm: 'block' } : 'block'
                 }}
               >
                 ShopEasy
               </Typography>
             </Box>
             
-            <Box component="form" sx={searchStyles(theme)} onSubmit={handleSearch}>
-              <Box sx={searchIconStyles(theme)}>
-                <SearchIcon />
-              </Box>
+            <Box 
+              component="form" 
+              sx={{ 
+                ...searchStyles(theme), 
+                flexGrow: 1,
+                maxWidth: isMobile ? 'calc(100% - 140px)' : 'auto'
+              }} 
+              onSubmit={handleSearch}
+            >
               <InputBase
-                placeholder="Search…"
+                placeholder={isMobile ? "Search" : "Search…"}
                 sx={inputBaseStyles(theme)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                inputProps={{ 'aria-label': 'search' }}
+                inputProps={{ 
+                  'aria-label': 'search',
+                  style: { 
+                    fontSize: isMobile ? '0.875rem' : 'inherit',
+                    padding: isMobile ? '6px 8px' : undefined
+                  }
+                }}
               />
             </Box>
             
-            <Box sx={{ flexGrow: 1 }} />
+            <Box sx={{ flexGrow: isMobile ? 0 : 1 }} />
             
             {!isMobile && (
               <Box sx={{ display: 'flex' }}>
@@ -385,40 +389,42 @@ const MainLayout = () => {
             
             <Box sx={{ display: 'flex' }}>
               <IconButton
-                size="large"
+                size={isMobile ? "medium" : "large"}
                 color="inherit"
                 onClick={() => navigate('/cart')}
+                sx={{ ml: isMobile ? 0.5 : 1 }}
               >
                 <Badge badgeContent={items.length} color="error">
-                  <ShoppingCartIcon />
+                  <ShoppingCartIcon fontSize={isMobile ? "small" : "medium"} />
                 </Badge>
               </IconButton>
               
-              {isAuthenticated && (
+              {isAuthenticated && !isMobile && (
                 <IconButton
-                  size="large"
+                  size={isMobile ? "medium" : "large"}
                   color="inherit"
                   onClick={() => navigate('/wishlist')}
                 >
-                  <FavoriteIcon />
+                  <FavoriteIcon fontSize={isMobile ? "small" : "medium"} />
                 </IconButton>
               )}
               
               <IconButton
-                size="large"
+                size={isMobile ? "medium" : "large"}
                 edge="end"
                 aria-label="account of current user"
                 aria-controls={menuId}
                 aria-haspopup="true"
                 onClick={handleProfileMenuOpen}
                 color="inherit"
+                sx={{ ml: isMobile ? 0.5 : 1 }}
               >
                 {isAuthenticated && user?.name ? (
-                  <Avatar sx={{ width: 24, height: 24, bgcolor: 'secondary.main' }}>
+                  <Avatar sx={{ width: isMobile ? 20 : 24, height: isMobile ? 20 : 24, bgcolor: 'secondary.main' }}>
                     {user.name.charAt(0).toUpperCase()}
                   </Avatar>
                 ) : (
-                  <AccountCircle />
+                  <AccountCircle fontSize={isMobile ? "small" : "medium"} />
                 )}
               </IconButton>
             </Box>
@@ -437,7 +443,7 @@ const MainLayout = () => {
       {renderMobileMenu}
       {renderMenu}
       
-      <Container component="main" sx={{ mt: 3, mb: 3, flexGrow: 1 }}>
+      <Container component="main" sx={{ mt: 3, mb: 3, flexGrow: 1, px: isMobile ? 2 : 3 }}>
         <Outlet />
       </Container>
       
