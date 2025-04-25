@@ -158,10 +158,10 @@
  *           schema:
  *             type: object
  *             required:
- *               - resetToken
+ *               - email
  *               - password
  *             properties:
- *               resetToken:
+ *               email:
  *                 type: string
  *               password:
  *                 type: string
