@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axiosConfig';
+import orderAPI from '../../api/orderAPI';
 
 // MUI components
 import {
@@ -15,13 +16,11 @@ import {
   TablePagination,
   Chip,
   IconButton,
-  TextField,
   Button,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  InputAdornment,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,16 +29,17 @@ import {
   Alert,
   CircularProgress,
   Menu,
-  Tooltip
+  Tooltip,
+  TextField
 } from '@mui/material';
 
 // MUI icons
 import {
-  Search as SearchIcon,
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   LocalShipping as ShippingIcon,
-  Payment as PaymentIcon
+  Payment as PaymentIcon,
+  FilterList as FilterListIcon
 } from '@mui/icons-material';
 
 // Order status chip colors
@@ -64,52 +64,57 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
-  
+
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState({
-    startDate: '',
-    endDate: ''
-  });
-  
+  const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   // Action menu state
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  
+
   // Update status dialog state
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
   const [newStatus, setNewStatus] = useState('');
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
 
   // Add new state for payment status dialog
   const [paymentStatusDialog, setPaymentStatusDialog] = useState(false);
-  const [newPaymentStatus, setNewPaymentStatus] = useState('');
   const [paymentStatusUpdateLoading, setPaymentStatusUpdateLoading] = useState(false);
-  
+  const [newPaymentStatus, setNewPaymentStatus] = useState('');
+
   // Define fetchOrders with useCallback to prevent infinite loops
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const params = {
-        page: page + 1,
-        limit: rowsPerPage
-      };
-      
-      if (searchTerm) params.search = searchTerm;
-      if (statusFilter) params.orderStatus = statusFilter;
-      if (paymentFilter) params.paymentStatus = paymentFilter;
-      if (dateFilter.startDate) params.startDate = dateFilter.startDate;
-      if (dateFilter.endDate) params.endDate = dateFilter.endDate;
-      
-      // Use the real API endpoint
-      const response = await api.get('/api/orders', { params });
+      let response;
+
+      if (startDate && endDate) {
+        response = await orderAPI.getOrdersByDateRange(startDate, endDate, {
+          page: page + 1,
+          limit: rowsPerPage
+        });
+      } else {
+        const params = {
+          page: page + 1,
+          limit: rowsPerPage
+        };
+
+        if (searchTerm) params.search = searchTerm;
+        if (orderStatusFilter) params.orderStatus = orderStatusFilter;
+        if (paymentStatusFilter) params.paymentStatus = paymentStatusFilter;
+
+        response = await api.get('/api/orders', { params });
+      }
+
       setOrders(response.data.data || []);
       setTotal(response.data.total || 0);
       setError(null);
@@ -118,42 +123,42 @@ const AdminOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, searchTerm, statusFilter, paymentFilter, dateFilter]);
-  
+  }, [page, rowsPerPage, searchTerm, orderStatusFilter, paymentStatusFilter, startDate, endDate]);
+
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
-  
+
   // Handle page change
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
-  
+
   // Handle rows per page change
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-  
+
   // Handle action menu
   const handleOpenMenu = (event, order) => {
     setMenuAnchorEl(event.currentTarget);
     setSelectedOrder(order);
   };
-  
+
   const handleCloseMenu = () => {
     setMenuAnchorEl(null);
   };
-  
+
   // Handle status update dialog
   const handleOpenStatusDialog = () => {
+    handleCloseMenu();
     if (selectedOrder) {
       setNewStatus(selectedOrder.orderStatus);
       setStatusDialogOpen(true);
-      handleCloseMenu();
     }
   };
-  
+
   const handleUpdateStatus = async () => {
     if (selectedOrder && newStatus) {
       setStatusUpdateLoading(true);
@@ -161,7 +166,7 @@ const AdminOrders = () => {
         await api.put(`/api/orders/${selectedOrder._id}`, {
           orderStatus: newStatus
         });
-        
+
         // Refresh the data after update
         fetchOrders();
         setStatusDialogOpen(false);
@@ -173,32 +178,30 @@ const AdminOrders = () => {
       }
     }
   };
-  
+
   // Handle payment status update dialog
   const handleOpenPaymentStatusDialog = () => {
+    handleCloseMenu();
     if (selectedOrder) {
       setNewPaymentStatus(selectedOrder.paymentStatus);
       setPaymentStatusDialog(true);
-      handleCloseMenu();
     }
   };
-  
+
   const handleUpdatePaymentStatus = async () => {
     if (selectedOrder && newPaymentStatus) {
       setPaymentStatusUpdateLoading(true);
       try {
-        // Use the same endpoint as order status updates, but with paymentStatus field
         await api.put(`/api/orders/${selectedOrder._id}`, {
           paymentStatus: newPaymentStatus
         });
-        
+
         // Update local state
-        setOrders(orders.map(order => 
-          order._id === selectedOrder._id 
+        setOrders(orders.map(order =>
+          order._id === selectedOrder._id
             ? { ...order, paymentStatus: newPaymentStatus }
             : order
         ));
-        
         setPaymentStatusDialog(false);
         setSelectedOrder(null);
       } catch (err) {
@@ -208,16 +211,7 @@ const AdminOrders = () => {
       }
     }
   };
-  
-  // Calculate order summary
-  const getOrderSummary = (order) => {
-    if (!order || !order.orderItems) {
-      return 'No items';
-    }
-    const itemCount = order.orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    return `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`;
-  };
-  
+
   // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -226,54 +220,38 @@ const AdminOrders = () => {
       day: 'numeric'
     });
   };
-  
+
   return (
     <>
       <Typography variant="h4" component="h1" gutterBottom>
         Orders
       </Typography>
-      
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
-      
+
       {/* Filters */}
       <Paper sx={{ mb: 3, p: 2 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Search Orders"
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(0);
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>Order Status</InputLabel>
+              <InputLabel>Filter by Order Status</InputLabel>
               <Select
-                value={statusFilter}
+                value={orderStatusFilter}
                 onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                  setOrderStatusFilter(e.target.value);
+                  if (e.target.value) {
+                    setPaymentStatusFilter('');
+                    setStartDate('');
+                    setEndDate('');
+                  }
                   setPage(0);
                 }}
-                label="Order Status"
+                label="Filter by Order Status"
               >
-                <MenuItem value="">All Statuses</MenuItem>
+                <MenuItem value="">All Order Statuses</MenuItem>
                 <MenuItem value="pending">Pending</MenuItem>
                 <MenuItem value="processing">Processing</MenuItem>
                 <MenuItem value="shipped">Shipped</MenuItem>
@@ -282,18 +260,23 @@ const AdminOrders = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>Payment Status</InputLabel>
+              <InputLabel>Filter by Payment Status</InputLabel>
               <Select
-                value={paymentFilter}
+                value={paymentStatusFilter}
                 onChange={(e) => {
-                  setPaymentFilter(e.target.value);
+                  setPaymentStatusFilter(e.target.value);
+                  if (e.target.value) {
+                    setOrderStatusFilter('');
+                    setStartDate('');
+                    setEndDate('');
+                  }
                   setPage(0);
                 }}
-                label="Payment Status"
+                label="Filter by Payment Status"
               >
-                <MenuItem value="">All Payments</MenuItem>
+                <MenuItem value="">All Payment Statuses</MenuItem>
                 <MenuItem value="pending">Pending</MenuItem>
                 <MenuItem value="completed">Completed</MenuItem>
                 <MenuItem value="failed">Failed</MenuItem>
@@ -304,49 +287,58 @@ const AdminOrders = () => {
           <Grid item xs={12} sm={6} md={2}>
             <TextField
               fullWidth
+              size="small"
               label="Start Date"
               type="date"
-              size="small"
-              value={dateFilter.startDate}
+              InputLabelProps={{ shrink: true }}
+              value={startDate}
               onChange={(e) => {
-                setDateFilter({ ...dateFilter, startDate: e.target.value });
+                setStartDate(e.target.value);
+                if (e.target.value) {
+                  setOrderStatusFilter('');
+                  setPaymentStatusFilter('');
+                }
                 setPage(0);
               }}
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={2}>
             <TextField
               fullWidth
+              size="small"
               label="End Date"
               type="date"
-              size="small"
-              value={dateFilter.endDate}
+              InputLabelProps={{ shrink: true }}
+              value={endDate}
               onChange={(e) => {
-                setDateFilter({ ...dateFilter, endDate: e.target.value });
+                setEndDate(e.target.value);
+                if (e.target.value) {
+                  setOrderStatusFilter('');
+                  setPaymentStatusFilter('');
+                }
                 setPage(0);
               }}
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} md={1}>
+          <Grid item xs={12} md={2}>
             <Button
               fullWidth
               variant="outlined"
+              startIcon={<FilterListIcon />}
               onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('');
-                setPaymentFilter('');
-                setDateFilter({ startDate: '', endDate: '' });
+                setOrderStatusFilter('');
+                setPaymentStatusFilter('');
+                setStartDate('');
+                setEndDate('');
                 setPage(0);
               }}
             >
-              Clear
+              Clear Filters
             </Button>
           </Grid>
         </Grid>
       </Paper>
-      
+
       {/* Orders Table */}
       <TableContainer component={Paper}>
         <Table>
@@ -355,7 +347,6 @@ const AdminOrders = () => {
               <TableCell>Order ID</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Customer</TableCell>
-              <TableCell>Summary</TableCell>
               <TableCell>Total</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Payment</TableCell>
@@ -366,8 +357,9 @@ const AdminOrders = () => {
             {loading ? (
               Array(rowsPerPage).fill().map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell><CircularProgress size={20} /></TableCell>
-                  <TableCell colSpan={7}><CircularProgress size={20} /></TableCell>
+                  <TableCell colSpan={7} align="center">
+                    <CircularProgress size={20} />
+                  </TableCell>
                 </TableRow>
               ))
             ) : orders.length > 0 ? (
@@ -388,22 +380,19 @@ const AdminOrders = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {getOrderSummary(order)}
-                  </TableCell>
-                  <TableCell>
                     <Typography variant="body2" fontWeight="medium">
                       ${order.grandTotal.toFixed(2)}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip 
+                    <Chip
                       label={order.orderStatus}
                       color={statusColors[order.orderStatus] || 'default'}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
-                    <Chip 
+                    <Chip
                       label={order.paymentStatus}
                       color={paymentStatusColors[order.paymentStatus] || 'default'}
                       size="small"
@@ -429,7 +418,7 @@ const AdminOrders = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography variant="body1" sx={{ py: 2 }}>
                     No orders found
                   </Typography>
@@ -438,7 +427,6 @@ const AdminOrders = () => {
             )}
           </TableBody>
         </Table>
-        
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
@@ -449,7 +437,7 @@ const AdminOrders = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </TableContainer>
-      
+
       {/* Action Menu */}
       <Menu
         anchorEl={menuAnchorEl}
@@ -469,7 +457,7 @@ const AdminOrders = () => {
           Update Payment Status
         </MenuItem>
       </Menu>
-      
+
       {/* Status Update Dialog */}
       <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)}>
         <DialogTitle>Update Order Status</DialogTitle>
@@ -494,8 +482,8 @@ const AdminOrders = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleUpdateStatus}
             disabled={statusUpdateLoading}
           >
@@ -527,8 +515,8 @@ const AdminOrders = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPaymentStatusDialog(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleUpdatePaymentStatus}
             disabled={paymentStatusUpdateLoading}
           >

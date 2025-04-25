@@ -4,14 +4,16 @@ const {
   getOrder,
   createOrder,
   updateOrderStatus,
-  cancelOrder
+  cancelOrder,
+  getOrdersByPaymentStatus,
+  getOrdersByDeliveryStatus,
+  getOrdersByDate
 } = require('../controllers/orderController');
 
 const router = express.Router();
 
 const { protect, authorize } = require('../middlewares/auth');
 
-// All order routes require authentication
 router.use(protect);
 
 router
@@ -24,5 +26,9 @@ router
   .get(getOrder)
   .put(authorize('admin'), updateOrderStatus)
   .delete(cancelOrder);
+
+router.get('/payment/:status', getOrdersByPaymentStatus);
+router.get('/status/:status', getOrdersByDeliveryStatus);
+router.get('/date/:startDate/:endDate', getOrdersByDate);
 
 module.exports = router;

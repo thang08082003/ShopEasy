@@ -10,20 +10,48 @@ const asyncHandler = require('../utils/asyncHandler');
 exports.getOrders = asyncHandler(async (req, res, next) => {
   let query;
   
-  // If admin, get all orders, else just user's orders
-  if (req.user.role === 'admin') {
-    query = Order.find().populate({
-      path: 'user',
-      select: 'name email'
-    });
-  } else {
-    query = Order.find({ user: req.user.id });
+  const { search, orderStatus, paymentStatus, page, limit } = req.query;
+  
+  const queryObj = {};
+  
+  if (req.user.role !== 'admin') {
+    queryObj.user = req.user.id;
   }
-
-  const orders = await query.sort('-createdAt');
+  
+  if (orderStatus) {
+    queryObj.orderStatus = orderStatus;
+  }
+  
+  if (paymentStatus) {
+    queryObj.paymentStatus = paymentStatus;
+  }
+  
+  if (search) {
+    if (search.startsWith('#') && search.length > 1) {
+      const orderId = search.substring(1);
+      queryObj._id = { $regex: orderId, $options: 'i' };
+    } else {
+      queryObj._id = { $regex: search, $options: 'i' };
+    }
+  }
+  
+  query = Order.find(queryObj).populate({
+    path: 'user',
+    select: 'name email'
+  });
+  
+  const currentPage = parseInt(page, 10) || 1;
+  const limitPerPage = parseInt(limit, 10) || 10;
+  const startIndex = (currentPage - 1) * limitPerPage;
+  
+  const total = await Order.countDocuments(queryObj);
+  query = query.skip(startIndex).limit(limitPerPage).sort('-createdAt');
+  
+  const orders = await query;
 
   res.status(200).json({
     success: true,
+    total,
     count: orders.length,
     data: orders
   });
@@ -170,5 +198,144 @@ exports.cancelOrder = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     data: order
+  });
+});
+
+// @desc    Get orders by payment status
+// @route   GET /api/orders/payment/:status
+// @access  Private
+exports.getOrdersByPaymentStatus = asyncHandler(async (req, res, next) => {
+  const paymentStatus = req.params.status;
+  
+  // Validate payment status
+  const validPaymentStatuses = ['pending', 'completed', 'failed', 'refunded'];
+  if (!validPaymentStatuses.includes(paymentStatus)) {
+    return next(new ErrorResponse(`Invalid payment status: ${paymentStatus}`, 400));
+  }
+  
+  const queryObj = { paymentStatus };
+  
+  // If not admin, only get user's orders
+  if (req.user.role !== 'admin') {
+    queryObj.user = req.user.id;
+  }
+  
+  const { page, limit } = req.query;
+  const currentPage = parseInt(page, 10) || 1;
+  const limitPerPage = parseInt(limit, 10) || 10;
+  const startIndex = (currentPage - 1) * limitPerPage;
+  
+  const total = await Order.countDocuments(queryObj);
+  
+  const orders = await Order.find(queryObj)
+    .populate({
+      path: 'user',
+      select: 'name email'
+    })
+    .skip(startIndex)
+    .limit(limitPerPage)
+    .sort('-createdAt');
+  
+  res.status(200).json({
+    success: true,
+    total,
+    count: orders.length,
+    data: orders
+  });
+});
+
+// @desc    Get orders by delivery status
+// @route   GET /api/orders/status/:status
+// @access  Private
+exports.getOrdersByDeliveryStatus = asyncHandler(async (req, res, next) => {
+  const orderStatus = req.params.status;
+  
+  // Validate order status
+  const validOrderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  if (!validOrderStatuses.includes(orderStatus)) {
+    return next(new ErrorResponse(`Invalid order status: ${orderStatus}`, 400));
+  }
+  
+  const queryObj = { orderStatus };
+  
+  // If not admin, only get user's orders
+  if (req.user.role !== 'admin') {
+    queryObj.user = req.user.id;
+  }
+  
+  const { page, limit } = req.query;
+  const currentPage = parseInt(page, 10) || 1;
+  const limitPerPage = parseInt(limit, 10) || 10;
+  const startIndex = (currentPage - 1) * limitPerPage;
+  
+  const total = await Order.countDocuments(queryObj);
+  
+  const orders = await Order.find(queryObj)
+    .populate({
+      path: 'user',
+      select: 'name email'
+    })
+    .skip(startIndex)
+    .limit(limitPerPage)
+    .sort('-createdAt');
+  
+  res.status(200).json({
+    success: true,
+    total,
+    count: orders.length,
+    data: orders
+  });
+});
+
+// @desc    Get orders by date range
+// @route   GET /api/orders/date/:startDate/:endDate
+// @access  Private
+exports.getOrdersByDate = asyncHandler(async (req, res, next) => {
+  const { startDate, endDate } = req.params;
+  
+  if (!startDate || !endDate) {
+    return next(new ErrorResponse('Please provide both start and end dates', 400));
+  }
+  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999); // Set to end of day
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return next(new ErrorResponse('Invalid date format. Use YYYY-MM-DD', 400));
+  }
+  
+  const queryObj = {
+    createdAt: {
+      $gte: start,
+      $lte: end
+    }
+  };
+  
+  if (req.user.role !== 'admin') {
+    queryObj.user = req.user.id;
+  }
+  
+  const { page, limit } = req.query;
+  const currentPage = parseInt(page, 10) || 1;
+  const limitPerPage = parseInt(limit, 10) || 10;
+  const startIndex = (currentPage - 1) * limitPerPage;
+  
+  const total = await Order.countDocuments(queryObj);
+  
+  const orders = await Order.find(queryObj)
+    .populate({
+      path: 'user',
+      select: 'name email'
+    })
+    .skip(startIndex)
+    .limit(limitPerPage)
+    .sort('-createdAt');
+  
+  res.status(200).json({
+    success: true,
+    total,
+    count: orders.length,
+    data: orders
   });
 });

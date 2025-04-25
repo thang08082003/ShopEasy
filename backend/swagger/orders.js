@@ -6,6 +6,34 @@
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by order ID (can include # prefix)
+ *       - in: query
+ *         name: orderStatus
+ *         schema:
+ *           type: string
+ *           enum: [pending, processing, shipped, delivered, cancelled]
+ *         description: Filter by order status
+ *       - in: query
+ *         name: paymentStatus
+ *         schema:
+ *           type: string
+ *           enum: [pending, completed, failed, refunded]
+ *         description: Filter by payment status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number (default 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Results per page (default 10)
  *     responses:
  *       200:
  *         description: List of orders
@@ -16,8 +44,12 @@
  *               properties:
  *                 success:
  *                   type: boolean
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of orders matching the query
  *                 count:
  *                   type: integer
+ *                   description: Number of orders in current page
  *                 data:
  *                   type: array
  *                   items:
@@ -153,4 +185,152 @@
  *         description: Not authorized
  *       404:
  *         description: Order not found
+ * 
+ * /api/orders/payment/{status}:
+ *   get:
+ *     summary: Get orders by payment status
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: status
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [pending, completed, failed, refunded]
+ *         description: Payment status to filter by
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number (default 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Results per page (default 10)
+ *     responses:
+ *       200:
+ *         description: List of orders with specified payment status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 total:
+ *                   type: integer
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Invalid payment status
+ *       401:
+ *         description: Not authorized
+ * 
+ * /api/orders/status/{status}:
+ *   get:
+ *     summary: Get orders by delivery status
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: status
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [pending, processing, shipped, delivered, cancelled]
+ *         description: Delivery status to filter by
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number (default 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Results per page (default 10)
+ *     responses:
+ *       200:
+ *         description: List of orders with specified delivery status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 total:
+ *                   type: integer
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Invalid delivery status
+ *       401:
+ *         description: Not authorized
+ * 
+ * /api/orders/date/{startDate}/{endDate}:
+ *   get:
+ *     summary: Get orders by date range
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date in YYYY-MM-DD format
+ *       - in: path
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date in YYYY-MM-DD format
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number (default 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Results per page (default 10)
+ *     responses:
+ *       200:
+ *         description: List of orders within the specified date range
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 total:
+ *                   type: integer
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Invalid date format or missing dates
+ *       401:
+ *         description: Not authorized
  */
