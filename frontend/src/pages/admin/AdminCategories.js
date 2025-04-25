@@ -374,7 +374,6 @@ const AdminCategories = () => {
               <TableCell>Image</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
-              <TableCell>Products</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -383,7 +382,7 @@ const AdminCategories = () => {
               Array(5).fill().map((_, index) => (
                 <TableRow key={index}>
                   <TableCell><CircularProgress size={20} /></TableCell>
-                  <TableCell colSpan={4}><CircularProgress size={20} /></TableCell>
+                  <TableCell colSpan={3}><CircularProgress size={20} /></TableCell>
                 </TableRow>
               ))
             ) : categories.length > 0 ? (
@@ -410,10 +409,6 @@ const AdminCategories = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {/* This would typically show product count */}
-                    <Typography variant="body2">-</Typography>
-                  </TableCell>
-                  <TableCell>
                     <Tooltip title="Edit">
                       <IconButton onClick={() => handleEditCategory(category)}>
                         <EditIcon />
@@ -429,7 +424,7 @@ const AdminCategories = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={4} align="center">
                   <Typography variant="body1" sx={{ py: 2 }}>
                     No categories found
                   </Typography>

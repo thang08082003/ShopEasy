@@ -94,8 +94,8 @@ const AdminDashboard = () => {
       {
         label: 'Orders (paid)',
         data: dashboardData.dailyRevenue.map(item => item.orders), // Remove scaling factor
-        backgroundColor: theme.palette.secondary.main,
-        borderColor: theme.palette.secondary.main,
+        backgroundColor: theme.palette.info.main,
+        borderColor: theme.palette.info.main,
         tension: 0.4,
         yAxisID: 'y1',
         type: 'line'
