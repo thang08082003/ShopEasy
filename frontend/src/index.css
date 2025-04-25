@@ -193,3 +193,69 @@ code {
     font-size: 16px !important;
   }
 }
+
+/* Enhanced styling for featured products slider dots */
+.featured-products-slider .slick-dots {
+  position: relative;
+  bottom: 0;
+  display: flex !important;
+  justify-content: center;
+  margin-top: 15px;
+  padding: 0;
+}
+
+.featured-products-slider .slick-dots li {
+  position: relative;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 5px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.featured-products-slider .slick-dots li button {
+  font-size: 0;
+  line-height: 0;
+  display: block;
+  width: 10px;
+  height: 10px;
+  padding: 5px;
+  cursor: pointer;
+  color: transparent;
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+
+.featured-products-slider .slick-dots li button:before {
+  font-size: 10px;
+  line-height: 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  content: '•';
+  text-align: center;
+  opacity: .25;
+  color: #000;
+}
+
+.featured-products-slider .slick-dots li.slick-active button:before {
+  opacity: .75;
+  color: #cb3c7b; /* Use your app's primary color */
+}
+
+/* Ensure the dots are visible on mobile */
+@media (max-width: 600px) {
+  .featured-products-slider .slick-dots {
+    display: flex !important;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  
+  .featured-products-slider .slick-dots li {
+    margin: 0 3px;
+  }
+}
