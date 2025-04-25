@@ -33,6 +33,7 @@ import 'slick-carousel/slick/slick-theme.css';
 const HeroBanner = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
     <Paper 
@@ -44,12 +45,25 @@ const HeroBanner = () => {
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
-        backgroundImage: `url(/sale.jpg)`,
-        height: 400,
+        backgroundImage: isMobile 
+          ? `url(/sale1.jpg)` 
+          : `url(/sale1.jpg)`,       
+        height: isMobile ? 200 : 400, 
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        borderRadius: { xs: 0, sm: 2 } 
       }}
     >
+      <Container maxWidth="lg">
+        <Box sx={{ 
+          maxWidth: { xs: '100%', md: '60%' }, 
+          p: { xs: 3, md: 4 }
+        }}>
+        
+          
+    
+        </Box>
+      </Container>
     </Paper>
   );
 };
