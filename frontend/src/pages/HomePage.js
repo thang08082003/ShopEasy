@@ -44,43 +44,12 @@ const HeroBanner = () => {
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
-        backgroundImage: `url(https://source.unsplash.com/random?shopping)`,
+        backgroundImage: `url(/sale.jpg)`,
         height: 400,
         display: 'flex',
         alignItems: 'center'
       }}
     >
-      {/* Overlay */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          right: 0,
-          left: 0,
-          backgroundColor: 'rgba(0,0,0,.4)',
-        }}
-      />
-      
-      {/* Banner Content */}
-      <Container maxWidth="lg">
-        <Box sx={{ position: 'relative', p: { xs: 3, md: 6 } }}>
-          <Typography component="h1" variant="h2" color="inherit" gutterBottom>
-            Shop With Ease
-          </Typography>
-          <Typography variant="h5" color="inherit" paragraph>
-            Discover amazing products at competitive prices with our secure shopping platform.
-          </Typography>
-          <Button 
-            variant="contained" 
-            size="large" 
-            onClick={() => navigate('/products')}
-            sx={{ mt: 2 }}
-          >
-            Shop Now
-          </Button>
-        </Box>
-      </Container>
     </Paper>
   );
 };
@@ -99,7 +68,7 @@ const HomePage = () => {
     dispatch(fetchCategories());
   }, [dispatch]);
   
-  // Updated slider settings to ensure dots are always visible
+  // Carousel settings
   const sliderSettings = {
     dots: true,
     infinite: true,
@@ -109,32 +78,26 @@ const HomePage = () => {
     autoplay: true,
     autoplaySpeed: 3000,
     pauseOnHover: true,
-    arrows: false, // Disable arrows if you only want dots
-    dotsClass: 'slick-dots featured-dots', // Custom class for styling
-    // Always show controls regardless of item count
     responsive: [
       {
         breakpoint: 1024,
         settings: {
           slidesToShow: 3,
-          slidesToScroll: 1,
-          dots: true
+          slidesToScroll: 1
         }
       },
       {
         breakpoint: 600,
         settings: {
           slidesToShow: 2,
-          slidesToScroll: 1,
-          dots: true
+          slidesToScroll: 1
         }
       },
       {
         breakpoint: 480,
         settings: {
           slidesToShow: 1,
-          slidesToScroll: 1,
-          dots: true
+          slidesToScroll: 1
         }
       }
     ]
@@ -176,27 +139,25 @@ const HomePage = () => {
           
           <Divider sx={{ mb: 3 }} />
           
-          <Box sx={{ position: 'relative' }} className="featured-products-slider">
-            {loading ? (
-              <Slider {...sliderSettings}>
-                {renderSkeletons()}
-              </Slider>
-            ) : featuredProducts && featuredProducts.length > 0 ? (
-              <Slider {...sliderSettings}>
-                {featuredProducts.map(product => (
-                  <Box key={product._id} sx={{ padding: 1, height: '100%' }}>
-                    <ProductCard product={product} />
-                  </Box>
-                ))}
-              </Slider>
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  No featured products available at this time.
-                </Typography>
-              </Box>
-            )}
-          </Box>
+          {loading ? (
+            <Slider {...sliderSettings}>
+              {renderSkeletons()}
+            </Slider>
+          ) : featuredProducts && featuredProducts.length > 0 ? (
+            <Slider {...sliderSettings}>
+              {featuredProducts.map(product => (
+                <Box key={product._id} sx={{ padding: 1, height: '100%' }}>
+                  <ProductCard product={product} />
+                </Box>
+              ))}
+            </Slider>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="text.secondary">
+                No featured products available at this time.
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Container>
       
