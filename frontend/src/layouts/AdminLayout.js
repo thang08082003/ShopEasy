@@ -194,7 +194,6 @@ const AdminLayout = () => {
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
             <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
-            <MenuItem onClick={() => navigate('/admin/settings')}>Settings</MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
