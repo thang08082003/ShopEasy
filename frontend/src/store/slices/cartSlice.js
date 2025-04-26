@@ -99,7 +99,9 @@ const cartSlice = createSlice({
         state.loading = false;
         state.items = action.payload.items || [];
         state.totalAmount = action.payload.totalAmount || 0;
-        state.discountedAmount = action.payload.discountedAmount;
+        state.discountedAmount = typeof action.payload.discountedAmount === 'number' && !isNaN(action.payload.discountedAmount) 
+          ? action.payload.discountedAmount 
+          : action.payload.totalAmount || 0;
         state.coupon = action.payload.coupon;
       })
       .addCase(fetchCart.rejected, (state, action) => {

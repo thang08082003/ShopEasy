@@ -59,11 +59,13 @@ const CheckoutPage = () => {
   const { items, totalAmount, discountedAmount, coupon } = useSelector(state => state.cart);
   const { user } = useSelector(state => state.auth);
   
-  // Calculate totals
+  // Calculate totals - ensure all values are valid numbers
   const cartTotal = totalAmount || 0;
-  const discount = coupon ? (totalAmount - discountedAmount) : 0;
+  const discount = coupon && typeof discountedAmount === 'number' && !isNaN(discountedAmount) 
+    ? (cartTotal - discountedAmount) 
+    : 0;
   const tax = Math.round((cartTotal - discount) * 0.1 * 100) / 100; // 10% tax
-  const orderTotal = cartTotal - discount + shipping + tax;
+  const orderTotal = Math.max(0, cartTotal - discount + shipping + tax);
   
   // Ensure cart data is loaded
   useEffect(() => {
@@ -167,7 +169,7 @@ const CheckoutPage = () => {
         coupon: coupon && coupon._id ? coupon._id : undefined,
         couponCode: coupon ? coupon.code : null,
         originalAmount: totalAmount,
-        discountAmount: discount,
+        discountAmount: typeof discount === 'number' && !isNaN(discount) ? discount : 0,
         finalAmount: orderTotal
       };
       

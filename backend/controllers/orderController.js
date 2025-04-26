@@ -85,50 +85,60 @@ exports.getOrder = asyncHandler(async (req, res, next) => {
 // @route   POST /api/orders
 // @access  Private
 exports.createOrder = asyncHandler(async (req, res, next) => {
+  // Extract order data from request body
   const {
     shippingAddress,
     paymentMethod,
+    shippingMethod,
     shippingFee,
-    tax
+    tax,
+    discountAmount,
+    coupon,
+    couponCode,
+    originalAmount,
+    finalAmount
   } = req.body;
 
-  // Get user cart
-  const cart = await Cart.findOne({ user: req.user.id });
+  // Get user's cart to get items
+  const cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
   
   if (!cart || cart.items.length === 0) {
-    return next(new ErrorResponse(`Cart is empty`, 400));
+    return next(new ErrorResponse('Your cart is empty', 400));
   }
 
-  // Create order with items from cart
+  // Validate and prepare the discount amount - ensure it's a valid number
+  const validDiscountAmount = typeof discountAmount === 'number' && !isNaN(discountAmount) 
+    ? discountAmount 
+    : 0;
+
+  // Calculate total amount
+  const totalAmount = cart.totalAmount;
+  const grandTotal = Math.max(0, totalAmount - validDiscountAmount + tax + shippingFee);
+
+  // Create order
   const order = await Order.create({
     user: req.user.id,
-    items: cart.items,
+    items: cart.items.map(item => ({
+      product: item.product._id,
+      quantity: item.quantity,
+      price: item.price
+    })),
     shippingAddress,
     paymentMethod,
-    paymentStatus: 'pending',
-    orderStatus: 'pending',
-    totalAmount: cart.totalAmount,
-    discountAmount: cart.coupon ? (cart.totalAmount - cart.discountedAmount) : 0,
-    couponCode: cart.coupon ? cart.coupon.code : null,
-    // If coupon exists in cart and it has an _id, use it, otherwise leave it undefined
-    coupon: cart.coupon && cart.coupon._id ? cart.coupon._id : undefined,
-    shippingFee: shippingFee || 0,
-    tax: tax || 0,
-    grandTotal: (cart.discountedAmount || cart.totalAmount) + (shippingFee || 0) + (tax || 0)
+    shippingFee,
+    tax,
+    totalAmount,
+    discountAmount: validDiscountAmount, // Use validated discount amount
+    coupon,
+    couponCode,
+    grandTotal
   });
 
-  // Update product stock
-  for (const item of cart.items) {
-    const product = await Product.findById(item.product);
-    if (product) {
-      product.stock -= item.quantity;
-      await product.save();
-    }
-  }
-
-  // Clear user's cart
+  // Empty user's cart
   cart.items = [];
   cart.totalAmount = 0;
+  cart.discountedAmount = undefined;
+  cart.coupon = undefined;
   await cart.save();
 
   res.status(201).json({
