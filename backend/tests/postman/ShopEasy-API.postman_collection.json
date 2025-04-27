@@ -435,12 +435,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"productId\": \"{{productId}}\",\n    \"quantity\": 2\n}"
+              "raw": "{\n    \"product\": \"{{productId}}\",\n    \"quantity\": 2\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart",
+              "raw": "{{baseUrl}}/api/cart/items",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart"]
+              "path": ["api", "cart", "items"]
             },
             "description": "Add a product to the cart"
           },
@@ -465,9 +465,9 @@
               "raw": "{\n    \"quantity\": 3\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{productId}}",
+              "raw": "{{baseUrl}}/api/cart/items/{{itemId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{productId}}"]
+              "path": ["api", "cart", "items", "{{itemId}}"]
             },
             "description": "Update cart item quantity"
           },
@@ -484,11 +484,57 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{productId}}",
+              "raw": "{{baseUrl}}/api/cart/items/{{itemId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{productId}}"]
+              "path": ["api", "cart", "items", "{{itemId}}"]
             },
             "description": "Remove a product from the cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"SUMMER2023\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/apply",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons", "apply"]
+            },
+            "description": "Apply a coupon code to the cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Coupon",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/remove",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons", "remove"]
+            },
+            "description": "Remove coupon from cart"
           },
           "response": []
         },
@@ -546,7 +592,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"shippingAddress\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"State\",\n        \"zipCode\": \"12345\",\n        \"country\": \"Country\"\n    },\n    \"paymentMethod\": \"credit_card\"\n}"
+              "raw": "{\n    \"shippingAddress\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"State\",\n        \"zipCode\": \"12345\",\n        \"country\": \"Country\"\n    },\n    \"paymentMethod\": \"creditCard\",\n    \"shippingMethod\": \"standard\",\n    \"shippingFee\": 5.99,\n    \"tax\": 8.75,\n    \"discountAmount\": 0,\n    \"originalAmount\": 99.99,\n    \"finalAmount\": 114.73\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders",
@@ -667,6 +713,136 @@
               ]
             },
             "description": "Get all orders (admin only)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Coupons",
+      "item": [
+        {
+          "name": "Get All Coupons (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons"]
+            },
+            "description": "Get all coupons (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Coupon by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/{{couponId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons", "{{couponId}}"]
+            },
+            "description": "Get a single coupon by ID (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Coupon (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data._id) {",
+                  "    pm.environment.set('couponId', response.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"SUMMER2023\",\n    \"description\": \"Summer Sale Discount\",\n    \"discountType\": \"percentage\",\n    \"discountAmount\": 15,\n    \"minPurchase\": 50,\n    \"maxDiscount\": 100,\n    \"startDate\": \"2023-06-01T00:00:00.000Z\",\n    \"endDate\": \"2023-08-31T23:59:59.000Z\",\n    \"isActive\": true,\n    \"usageLimit\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons"]
+            },
+            "description": "Create a new coupon (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Coupon (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"discountAmount\": 20,\n    \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/{{couponId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons", "{{couponId}}"]
+            },
+            "description": "Update a coupon (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Coupon (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coupons/{{couponId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coupons", "{{couponId}}"]
+            },
+            "description": "Delete a coupon (admin only)"
           },
           "response": []
         }
@@ -921,6 +1097,78 @@
               ]
             },
             "description": "Search for products by keyword"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Sales Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/sales?period=monthly&limit=6",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "sales"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "limit",
+                  "value": "6"
+                }
+              ]
+            },
+            "description": "Get sales analytics data (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "User Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "users"]
+            },
+            "description": "Get user analytics data (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Inventory Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "inventory"]
+            },
+            "description": "Get inventory analytics data (admin only)"
           },
           "response": []
         }
