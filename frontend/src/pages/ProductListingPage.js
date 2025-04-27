@@ -283,42 +283,8 @@ const ProductListingPage = () => {
           </FormControl>
         </Box>
         
-        {/* Stock Filter */}
-        <Box sx={{ mb: 3 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={filters.in_stock}
-                onChange={(e) => handleFilterChange('in_stock', e.target.checked)}
-              />
-            }
-            label="In Stock Only"
-          />
-        </Box>
+  
         
-        {/* Sort */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>Sort By</Typography>
-          <FormControl fullWidth size="small">
-            <InputLabel>Sort</InputLabel>
-            <Select
-              value={filters.sort}
-              label="Sort"
-              onChange={(e) => handleFilterChange('sort', e.target.value)}
-              MenuProps={{
-                PaperProps: {
-                  style: { maxHeight: 300 }
-                }
-              }}
-            >
-              <MenuItem value="-createdAt">Newest First</MenuItem>
-              <MenuItem value="createdAt">Oldest First</MenuItem>
-              <MenuItem value="price">Price: Low to High</MenuItem>
-              <MenuItem value="-price">Price: High to Low</MenuItem>
-              <MenuItem value="-ratings.average">Best Rated</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
         
         <Button 
           variant="outlined" 
